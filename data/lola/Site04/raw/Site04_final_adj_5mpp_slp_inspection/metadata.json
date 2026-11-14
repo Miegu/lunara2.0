@@ -1,0 +1,72 @@
+{
+  "input_file": "C:\\Users\\nicol\\OneDrive\\Documents\\GitHub\\lunara\\data\\lola\\Site04\\raw\\Site04_final_adj_5mpp_slp.tif",
+  "driver": "GTiff",
+  "width_pixels": 3200,
+  "height_pixels": 3200,
+  "band_count": 1,
+  "band_1_dtype": "float32",
+  "band_1_nodata": NaN,
+  "band_1_unit": null,
+  "band_1_scale": 1.0,
+  "band_1_offset": 0.0,
+  "crs": "PROJCS[\"unnamed\",GEOGCS[\"unnamed ellipse\",DATUM[\"unknown\",SPHEROID[\"unnamed\",1737400,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",-90],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1],AXIS[\"Easting\",NORTH],AXIS[\"Northing\",NORTH]]",
+  "crs_wkt": "PROJCS[\"unnamed\",GEOGCS[\"unnamed ellipse\",DATUM[\"unknown\",SPHEROID[\"unnamed\",1737400,0]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]]],PROJECTION[\"Polar_Stereographic\"],PARAMETER[\"latitude_of_origin\",-90],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1],AXIS[\"Easting\",NORTH],AXIS[\"Northing\",NORTH]]",
+  "transform": [
+    5.0,
+    0.0,
+    -9000.0,
+    0.0,
+    -5.0,
+    1000.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "pixel_size_map_units": [
+    5.0,
+    5.0
+  ],
+  "bounds": {
+    "left": -9000.0,
+    "bottom": -15000.0,
+    "right": 7000.0,
+    "top": 1000.0
+  },
+  "valid_pixel_count": 10240000,
+  "masked_pixel_count": 0,
+  "masked_pixel_percent": 0.0,
+  "valid_value_min": 0.0,
+  "valid_value_max": 69.64722442626953,
+  "valid_value_mean": 20.66414617853889,
+  "valid_value_std": 10.101921814217677,
+  "percentiles_1_2_5_50_95_98_99": [
+    2.3832666873931885,
+    3.345094680786133,
+    5.172823905944824,
+    20.550517082214355,
+    34.5591510772705,
+    36.16573715209961,
+    37.35413360595703
+  ],
+  "dataset_tags": {
+    "NC_GLOBAL#Conventions": "COARDS, CF-1.5",
+    "NC_GLOBAL#GMT_version": "5.4.5 [64-bit]",
+    "NC_GLOBAL#history": "xyz2grd -bi3 -I5 -R-9.00000000000e+03/7.00000000000e+03/-1.50000000000e+04/1.00000000000e+03 -Gtest.grd -r",
+    "NC_GLOBAL#node_offset": "1",
+    "x#actual_range": "{-9000,7000}",
+    "x#long_name": "x",
+    "y#actual_range": "{-15000,1000}",
+    "y#long_name": "y",
+    "z#actual_range": "{0,69.64722442626953}",
+    "z#long_name": "z",
+    "z#_FillValue": "nan",
+    "AREA_OR_POINT": "Area"
+  },
+  "band_1_tags": {
+    "actual_range": "{0,69.64722442626953}",
+    "long_name": "z",
+    "NETCDF_VARNAME": "z",
+    "_FillValue": "nan"
+  },
+  "warning": "Confirm vertical units, projection, coordinate frame, pixel registration, and NoData semantics against the official product README before using the DEM in calculations."
+}
