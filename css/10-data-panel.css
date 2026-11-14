@@ -13,11 +13,17 @@
 .nova-link:focus-visible{outline:2px solid #8bdfff;outline-offset:3px;border-radius:4px}
 
 /* 1. Scenario */
-.nova-scenario-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,.8fr);gap:12px}
+.nova-scenario-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
 .nova-scenario .field{margin:0;min-width:0}
 .nova-scenario .field label{font:600 13px "Space Grotesk",sans-serif;color:var(--d-muted);letter-spacing:0;text-transform:none}
 .nova-scenario .field select,.nova-scenario .field input{font:600 15px "Space Grotesk",sans-serif;padding:11px 12px;border-radius:10px;min-height:46px}
 .nova-scenario-meta{margin-top:10px}
+/* Date range: quick window lengths under the End date */
+.range-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.range-chips button{padding:4px 10px;border:1px solid rgba(136,187,230,.3);border-radius:99px;background:transparent;color:#a9c0d8;font:600 13px "Space Grotesk",sans-serif;cursor:pointer}
+.range-chips button:hover{border-color:#8adfff;color:#eef6ff}
+.range-chips button[aria-pressed="true"]{background:#8adfff;border-color:#8adfff;color:#06111f}
+.range-chips button:focus-visible{outline:2px solid #8bdfff;outline-offset:2px}
 .nova-scenario-meta .nova-coordinate-tag{font:500 13px "IBM Plex Mono",monospace;color:var(--d-muted)}
 
 /* 2. Results over the window */
@@ -31,25 +37,73 @@
 .nova-meter i{display:block;height:100%;width:0;border-radius:99px;background:var(--c);transition:width .4s ease}
 .nova-stat-next{font-size:14px;color:#dbe8f7}
 
-/* 3. Timeline + scrubber */
+/* Scenario: header actions and "More options" */
+.nova-card-actions{display:flex;flex-wrap:wrap;gap:8px}
+.nova-card-actions .btn{font-size:13px;padding:8px 12px}
+#compareBadge{margin-left:4px;padding:1px 7px;border-radius:99px;background:rgba(255,255,255,.18);font-size:12px}
+.nova-more{margin-top:12px;border-top:1px solid rgba(136,187,230,.12);padding-top:10px}
+.nova-more>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;list-style:none}
+.nova-more>summary::-webkit-details-marker{display:none}
+.nova-more .nova-coordinate-tag{font:500 13px "IBM Plex Mono",monospace;color:var(--d-muted)}
+.nova-more-toggle{font:600 14px "Space Grotesk",sans-serif;color:#8adfff}
+.nova-more-toggle::after{content:" ▾";display:inline-block;transition:transform .2s}
+.nova-more[open] .nova-more-toggle::after{transform:rotate(180deg)}
+.nova-more>summary:focus-visible{outline:2px solid #8bdfff;outline-offset:3px;border-radius:6px}
+.nova-more-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+.nova-more-group{min-width:0;padding:14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(136,187,230,.12)}
+.nova-more-group--wide{grid-column:1/-1}
+.nova-more-group h3{margin:0 0 10px;font:700 14px "Sora","Space Grotesk",sans-serif;color:var(--d-text)}
+.nova-more-group .field label{font:600 13px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:var(--d-muted)}
+.nova-more-group .field input{font-size:14px}
+.nova-more-group .field-note,.nova-more-group .status-note{font-size:13px}
+.nova-more-group .spice-bridge__eyebrow{font-size:11px}
+.nova-more-group .spice-bridge__copy,#spiceServiceStatus{font-size:13px}
+.nova-more-group .btn{font-size:13px}
+
+/* 3. Sky around the site (2D panorama, js/ui/horizon-2d.js) + compact bars + scrubber */
 .nova-card.nova-time-card{padding:18px 20px}
-.nova-time-card .timeline{padding:0 0 4px}
-.nova-time-card .track{grid-template-columns:84px minmax(0,1fr);gap:12px;margin:10px 0}
-.nova-time-card .track-name{font:600 14px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:var(--d-text)}
-.nova-time-card .track-bar{height:22px;border-radius:7px}
+.nova-h2d{margin:0 -6px 6px;overflow-x:auto}
+.nova-h2d .h2d{display:block;width:100%;min-width:560px;height:auto}
+.h2d-axis{fill:#8ea6c2;font:14px "IBM Plex Mono",monospace}
+.h2d-dir{fill:#d4e3f3;font-weight:600}
+.h2d-mark{font:700 17px "Space Grotesk",sans-serif;paint-order:stroke;stroke:#08111f;stroke-width:4px}
+.nova-time-card .timeline--compact{padding:0}
+.nova-time-card .track{grid-template-columns:70px minmax(0,1fr);gap:10px;margin:6px 0}
+.nova-time-card .track-name{font:600 13px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:var(--d-text)}
+.nova-time-card .track-bar{height:10px;border-radius:99px}
 .nova-time-card .time-control{margin-top:8px;padding:12px 0 0;border-top:1px solid rgba(136,187,230,.12)}
 .nova-time-card .time-label{font:500 13px "IBM Plex Mono",monospace;color:#c9d9ea}
 .nova-time-card .btn{font-size:14px;padding:9px 14px}
 
-/* 4. Instant readings */
+/* 4. Instant readings: one row of compact tiles with a status chip */
 .nova-data .nova-section-label strong{font:700 16px "Sora","Space Grotesk",sans-serif;letter-spacing:-.01em;text-transform:none;color:var(--d-text)}
-.nova-data .kpi .label{font:600 12px "Space Grotesk",sans-serif;letter-spacing:.02em;text-transform:none}
+.nova-data .kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.nova-data .kpi{min-height:0;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.nova-data .kpi::before,.nova-data .kpi::after{display:none}
+.nova-data .kpi .label{display:flex;align-items:center;gap:7px;font:600 14px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:var(--d-text)}
+.nova-data .kpi-icon{font-size:15px}
+.nova-data .kpi-state{margin-left:auto;padding:2px 9px;border-radius:99px;font:600 12px "Space Grotesk",sans-serif;border:1px solid currentColor}
+.nova-data .kpi-state.is-on{color:#7fe8bf;background:rgba(127,232,191,.1)}
+.nova-data .kpi-state.is-off{color:#ff9a8a;background:rgba(255,154,138,.08)}
+.nova-data .kpi strong{margin:2px 0 0;font:700 clamp(20px,1.9vw,26px) "Sora","Space Grotesk",sans-serif;letter-spacing:-.02em}
 .nova-data .kpi small{font-size:12px;color:var(--d-muted)}
 
 /* 5. More tools */
 .nova-data .nova-workspace-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .nova-data .nova-launcher strong{font-size:15px}
 .nova-data .nova-launcher small{font:13px "Space Grotesk",sans-serif;letter-spacing:0;color:var(--d-muted)}
+
+/* "Link to Earth" 3D panel: status box (js/ui/render.js renderComms) */
+.comms-hud{position:absolute;z-index:3;left:10px;right:10px;bottom:44px;display:flex;flex-direction:column;gap:5px;padding:7px 11px;border-radius:12px;border:1px solid rgba(255,125,137,.45);background:rgba(6,11,22,.82);backdrop-filter:blur(8px);pointer-events:none}
+.comms-hud.is-ok{border-color:rgba(92,224,174,.5)}
+.comms-hud__row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px}
+.comms-hud__state{font:700 14px "Sora","Space Grotesk",sans-serif;color:#ff9aa4;white-space:nowrap}
+.comms-hud.is-ok .comms-hud__state{color:#7fe8bf}
+.comms-hud__detail{font:500 13px "Space Grotesk",sans-serif;color:#e6eef8}
+.comms-hud__stations{display:flex;flex-wrap:wrap;gap:6px}
+.comms-hud__stations span{padding:2px 8px;border-radius:99px;border:1px solid rgba(160,176,198,.35);font:500 12px "IBM Plex Mono",monospace;color:#9fb0c6}
+.comms-hud__stations span.is-on{border-color:rgba(92,224,174,.55);color:#7fe8bf}
+.comms-hud__window{margin-left:auto;font:500 12px "Space Grotesk",sans-serif;color:#93abc7}
 
 /* Left column: make the labels of the 3D views readable */
 .nova-observatory .visual-grid .panel-head h3{font-size:12px}
@@ -58,13 +112,17 @@
 .nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:11px}
 .nova-overline,.nova-stage-tag{font-size:11px}
 
+.nova-data .nova-launcher--compare{grid-column:1/-1;border-color:rgba(131,218,255,.45);background:linear-gradient(120deg,rgba(30,90,140,.55),rgba(60,50,130,.45))}
+.nova-data .nova-launcher--compare strong{font-size:17px}
+
+@media (max-width:1300px){.nova-data .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:1100px){
   .nova-summary-grid{grid-template-columns:1fr}
   .nova-stat{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;column-gap:12px}
   .nova-stat .nova-meter,.nova-stat-next,.nova-stat-sub{grid-column:1/-1}
 }
 @media (max-width:700px){
-  .nova-scenario-grid{grid-template-columns:1fr}
+  .nova-scenario-grid,.nova-more-body{grid-template-columns:1fr}
   .nova-card,.nova-card.nova-time-card{padding:15px}
 }
 @media (prefers-reduced-motion:reduce){.nova-meter i{transition:none}}

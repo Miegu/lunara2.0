@@ -15,9 +15,12 @@ No abrir `index.html` con doble clic (`file://`): el navegador no carga bien los
 | `js/core/state.js` | Constantes, estado compartido (`ephemeris`, `rows`, `currentScenario`…) y utilidades (`$`, `clamp`, vectores) |
 | `js/core/ephemeris.js` | Posiciones del Sol y la Tierra: modo demo y lectura de `positions.json` |
 | `js/core/geometry.js` | Geometría local, horizonte, elevación/azimut, intervalos de visibilidad |
-| `js/ui/render.js` | Pintar métricas, gráfica de elevación y línea de tiempo |
-| `js/ui/scenes-3d.js` | Escenas Three.js (cielo local y globo lunar) y vista 2D de respaldo |
-| `js/ui/comparison.js` | Comparador de misiones y buscador de sitios candidatos |
+| `js/core/comms.js` | Comunicaciones con la Tierra: visibilidad de las estaciones DSN y balance de enlace (panel «Link to Earth») |
+| `js/data/terrain.js` | Horizontes de terreno por sitio: carga los CSV de LOLA de `horizons/` y los CSV subidos a mano |
+| `js/ui/horizon-2d.js` | Vista 2D del horizonte (Sol y Tierra alrededor del sitio); la usan la columna principal y el comparador |
+| `js/ui/render.js` | Pintar métricas, resumen de la ventana, gráfica de elevación y línea de tiempo |
+| `js/ui/scenes-3d.js` | Escenas Three.js: cielo local con el relieve LOLA y panel «Link to Earth» (Luna, Tierra, estaciones DSN); vista 2D de respaldo |
+| `js/ui/comparison.js` | Comparador (4 huecos, añadir sitios desde el hueco libre, 3D/2D, ★ mejor valor) y buscador de sitios |
 | `js/data/files.js` | Cargar `positions.json` y CSV de horizonte; exportar informes |
 | `js/app/controls.js` | `calculate()` y los listeners de los controles principales |
 | `js/data/spice-bridge.js` | Conexión con el servidor Python de SPICE |
@@ -26,6 +29,18 @@ No abrir `index.html` con doble clic (`file://`): el navegador no carga bien los
 | `js/foldout-navigation.js` | Navegación entre secciones plegables |
 | `js/intro.js` | Pantalla de introducción |
 | `css/01-…` a `css/09-…` | Estilos, en el mismo orden en que estaban en el `index.html` original |
+| `css/10-data-panel.css` | Columna derecha de datos (escenario, resumen, vista 2D, lecturas, herramientas) |
+| `css/11-compare.css` | Comparador a pantalla completa |
+
+## Terreno LOLA: cómo añadir un sitio
+
+El mapa de alturas LOLA (cientos de MB) nunca se carga en la web. Para cada sitio del catálogo se precalcula
+su horizonte (un CSV de ~8 KB) y la web solo carga ese fichero:
+
+1. Añadir el sitio a `tools/sites_south_pole.csv` (nombre, lat, lon).
+2. `python tools/lola_horizon.py --download` (solo la primera vez: baja el mapa a `data/lola/`, ignorado por git).
+3. `python tools/lola_horizon.py` → genera `horizons/<nombre>.csv`.
+4. Añadir el sitio a `PRESETS` en `js/core/state.js` (con `horizon: 'horizons/<nombre>.csv'`) y su `<option>` en `index.html`.
 
 ## Dos reglas importantes
 

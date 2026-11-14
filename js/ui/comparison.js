@@ -11,8 +11,7 @@ const comparisonIndices = new Map();
 const comparisonScenes = new Map();
 
 function scenarioRecord(site,data,summary,startMs,hours){
-  const terrainApplied = !!(horizonProfile && horizonProfileSite &&
-    Math.abs(site.lat-horizonProfileSite.lat)<1e-5 && Math.abs(site.lon-horizonProfileSite.lon)<1e-5);
+  const terrainApplied = !!profileForSite(site); // each site has its own horizon (js/data/terrain.js)
   const stepSeconds = data.length>1 ? (data[1].sec-data[0].sec) : 0;
   return {id:++comparisonCounter,site:{...site},data:data.map(r=>({...r,sun:{...r.sun},earth:{...r.earth}})),summary,startMs,hours,mode:dataMode,meta:ephemeris?.meta ? {...ephemeris.meta} : null,terrainApplied,stepSeconds};
 }
@@ -96,7 +95,7 @@ function createComparison3D(host,record,row){
   return {renderer,update,dispose};
 }
 function ensureComparisonScenes(){
-  if(!comparisonViewVisible() || !comparison.length)return;
+  if(comparisonViewMode!=='3d' || !comparisonViewVisible() || !comparison.length)return;
   for(const record of comparison){
     const host=document.querySelector(`[data-compare-preview="${record.id}"]`);
     if(!host)continue;
@@ -113,39 +112,115 @@ function selectedComparisonRow(record){
   const idx=comparisonIndices.get(record.id)??Math.floor((record.data.length-1)/2);
   return {idx,row:record.data[Math.max(0,Math.min(record.data.length-1,idx))]};
 }
+// Preview type of the comparison cards: '3d' (Three.js scene, default) or '2d' (horizon panorama, js/ui/horizon-2d.js).
+let comparisonViewMode='3d';
+function renderComparisonPreview2D(record,row){
+  const host=document.querySelector(`[data-compare-preview="${record.id}"]`);
+  if(host)host.innerHTML=horizonPanoramaSVG(record.data,row,{width:420,height:230,terrain:terrainFor(record.site)});
+}
 function updateComparisonCard(record,index){
   const idx=clamp(Number(index)||0,0,record.data.length-1);comparisonIndices.set(record.id,idx);
   const row=record.data[idx],scene=comparisonScenes.get(record.id);
   scene?.update?.(row);
+  if(comparisonViewMode==='2d')renderComparisonPreview2D(record,row);
   const root=document.querySelector(`[data-compare-card="${record.id}"]`);if(!root)return;
   const time=root.querySelector('[data-compare-time]');if(time)time.textContent=isoAt(row.dateMs).replace(' UTC','');
   const readout=root.querySelector('[data-compare-readout]');if(readout)readout.innerHTML=`<span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span>`;
 }
+// Best value of each metric across the saved missions (shown with a ★ when there are 2 or more).
+function comparisonBest(){
+  if(comparison.length<2)return {};
+  const best=get=>{const m=Math.max(...comparison.map(get));return m>0?m:null;};
+  return {sun:best(c=>c.summary.sunCenter),earth:best(c=>c.summary.earthLimb),power:best(c=>c.summary.maxPower.output)};
+}
+// Form shown in the first free slot: add a site/date directly, without changing the main scenario.
+function comparisonSlotForm(){
+  const options=Object.entries(PRESETS).map(([key,p])=>`<option value="${key}">${escapeHtml(p.name)}</option>`).join('');
+  return `<article class="compare-slot compare-slot--form" data-slot-form>
+    <div class="compare-slot__title"><span aria-hidden="true">＋</span> Add a site</div>
+    <label class="compare-slot__field">Site<select data-slot-site><option value="current">Current scenario coordinates</option>${options}</select></label>
+    <div class="compare-slot__row">
+      <label class="compare-slot__field">Start (UTC)<input type="datetime-local" step="60" data-slot-date value="${escapeHtml($('date').value)}"></label>
+      <label class="compare-slot__field">End (UTC)<input type="datetime-local" step="60" data-slot-end value="${escapeHtml($('endDate').value)}"></label>
+    </div>
+    <button class="btn primary" type="button" data-slot-add>＋ Add to comparison</button>
+    <p class="compare-slot__msg" data-slot-msg aria-live="polite"></p>
+  </article>`;
+}
+async function addComparisonFromSlot(form){
+  const msg=form.querySelector('[data-slot-msg]'),button=form.querySelector('[data-slot-add]');
+  const key=form.querySelector('[data-slot-site]').value,dateValue=form.querySelector('[data-slot-date]').value,endValue=form.querySelector('[data-slot-end]').value;
+  const hours=Math.round((new Date(endValue+':00Z')-new Date(dateValue+':00Z'))/3600e3);
+  if(comparison.length>=4){msg.textContent='The comparison is full (4 of 4). Remove a mission first.';return;}
+  if(!dateValue||!endValue){msg.textContent='Choose a start and an end date.';return;}
+  if(!(hours>=1)||hours>MAX_WINDOW_HOURS){msg.textContent='The end must be after the start (one year at most).';return;}
+  let base;try{base=buildSite();}catch(err){msg.textContent=err.message;return;}
+  const preset=PRESETS[key];
+  const site=preset?{...base,name:preset.name,lat:preset.lat,lon:preset.lon,alt:preset.alt}:{...base};
+  const startMs=new Date(dateValue+':00Z').getTime(),step=autoStepMinutes(hours);
+  button.disabled=true;msg.textContent='Calculating…';
+  const savedEphemeris=ephemeris;
+  try{
+    // With SPICE active, each mission gets its own real ephemeris for its own window.
+    if(dataMode==='spice'){
+      const s=(startMs-J2000_MS)/1000,e=s+hours*3600;
+      if(!(ephemeris&&ephemeris.start<=s+1e-6&&ephemeris.end>=e-1e-6)){
+        const params=new URLSearchParams({start_utc:dateValue,duration_hours:String(hours),step_minutes:String(step)});
+        const response=await fetch(`/api/ephemeris?${params}`,{cache:'no-store'});
+        const payload=await response.json();
+        if(!response.ok)throw new Error(payload.details||payload.error||`HTTP ${response.status}`);
+        ephemeris=normalizeDataset(payload);
+      }
+    }
+    const data=makeRows(site,startMs,hours,step);
+    const record=scenarioRecord(site,data,calculateSummary(data),startMs,hours);
+    record.key=comparisonKey(record);
+    if(comparison.some(c=>c.key===record.key))throw new Error('this site and date are already in the comparison.');
+    comparison.push(record);
+    comparisonIndices.set(record.id,Math.floor((data.length-1)/2));
+  }catch(err){
+    msg.textContent=`Could not add: ${err.message}`;button.disabled=false;return;
+  }finally{
+    ephemeris=savedEphemeris;
+  }
+  renderComparison();
+}
 function renderComparison(){
   const count=document.getElementById('compareCount');
   if(count)count.textContent=`${String(comparison.length).padStart(2,'0')} / 04 MISSIONS STORED`;
+  const badge=document.getElementById('compareBadge');
+  if(badge)badge.textContent=`${comparison.length}/4`;
   disposeComparisonScenes();
   const list=$('compareList'),body=$('compareTable');
-  if(!comparison.length){
-    list.innerHTML='<div class="compare-empty compare-empty--studio"><strong>Your comparison board is empty.</strong><span>Analyse a mission, then choose “Add to comparison”. You can keep up to four independent mission runs here.</span></div>';
-    body.innerHTML='<tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr>';
-    $('compare').classList.remove('is-detail-open');$('compareMissionDetail').hidden=true;$('compareMissionDetail').innerHTML='';
-    return;
-  }
-  list.innerHTML=comparison.map((c,i)=>{
+  const best=comparisonBest();
+  const star=(value,top)=>top!=null&&Math.abs(value-top)<1e-9?'<span class="compare-best" title="Best of the comparison">★</span>':'';
+  const cards=comparison.map((c,i)=>{
     const idx=comparisonIndices.get(c.id)??Math.floor((c.data.length-1)/2),row=c.data[idx];
     const mode=c.mode==='spice'?'SPICE / REAL':'DEMO / SYNTHETIC';
     const kernel=c.meta?.ephemeris_kernel||'synthetic vectors';
+    const pct=h=>Math.round(clamp(h/c.hours*100,0,100));
     return `<article class="mission-compare-card" data-compare-card="${c.id}">
       <div class="mission-compare-card__head"><span class="mission-compare-card__index">M${String(i+1).padStart(2,'0')}</span><div class="mission-compare-card__identity"><strong title="${escapeHtml(c.site.name)}">${escapeHtml(c.site.name)}</strong><small>${escapeHtml(mode)} · ${escapeHtml(kernel)}</small></div><button class="mission-compare-card__remove" type="button" data-remove="${c.id}" aria-label="Remove ${escapeHtml(c.site.name)}">×</button></div>
-      <div class="compare-preview"><div class="compare-preview__tag">LOCAL SKY / 3D · SCHEMATIC HORIZON</div><div class="compare-preview__quality">${c.mode==='spice'?'SPICE':'DEMO'} · ${c.data.length} SAMPLES</div><div data-compare-preview="${c.id}" style="position:absolute;inset:0"></div><div class="compare-preview__readout" data-compare-readout><span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span></div></div>
+      <div class="compare-preview compare-preview--${comparisonViewMode}"><div class="compare-preview__tag">SKY · ${comparisonViewMode==='3d'?'3D':'2D'}</div><div class="compare-preview__quality">${c.mode==='spice'?'SPICE':'DEMO'} · ${c.data.length} SAMPLES</div><div data-compare-preview="${c.id}" class="compare-preview__host"></div><div class="compare-preview__readout" data-compare-readout><span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span></div></div>
       <div class="compare-card-scrubber"><input type="range" min="0" max="${c.data.length-1}" value="${idx}" data-compare-slider="${c.id}" aria-label="Select mission time for ${escapeHtml(c.site.name)}"><span data-compare-time>${isoAt(row.dateMs).replace(' UTC','')}</span></div>
-      <div class="compare-card-kpis"><div class="compare-card-kpi"><span>Sun disk visible</span><strong>${fmtHours(c.summary.sunLimb*60)}</strong></div><div class="compare-card-kpi"><span>Earth disk visible</span><strong>${fmtHours(c.summary.earthLimb*60)}</strong></div><div class="compare-card-kpi"><span>Peak array · est.</span><strong>${number(c.summary.maxPower.output,0)} W/m²</strong></div></div>
-      <div class="mission-compare-card__meta"><span>${number(c.site.lat,3)}° / ${number(c.site.lon,3)}°</span><span>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</span><span>${c.hours} H WINDOW</span><span>${c.terrainApplied?'HORIZON MASK':'FLAT HORIZON'}</span></div>
+      <div class="compare-card-kpis">
+        <div class="compare-card-kpi compare-card-kpi--sun"><span>☀ Sun visible</span><strong>${fmtHours(c.summary.sunCenter*60)}${star(c.summary.sunCenter,best.sun)}</strong><small>${pct(c.summary.sunCenter)}% of the window</small></div>
+        <div class="compare-card-kpi compare-card-kpi--earth"><span>◉ Earth in view</span><strong>${fmtHours(c.summary.earthLimb*60)}${star(c.summary.earthLimb,best.earth)}</strong><small>${pct(c.summary.earthLimb)}% of the window</small></div>
+        <div class="compare-card-kpi compare-card-kpi--power"><span>⚡ Peak power</span><strong>${number(c.summary.maxPower.output,0)} W/m²${star(c.summary.maxPower.output,best.power)}</strong><small>${number(c.site.efficiency,0)}% panel</small></div>
+      </div>
+      <div class="mission-compare-card__meta"><span>${number(c.site.lat,3)}° / ${number(c.site.lon,3)}°</span><span>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</span><span>${fmtWindow(c.hours).toUpperCase()}</span><span>${c.terrainApplied?'HORIZON MASK':'FLAT HORIZON'}</span></div>
       <div class="mission-compare-card__actions"><button class="btn primary small" type="button" data-details="${c.id}">View telemetry & details ↗</button></div>
     </article>`;
   }).join('');
-  body.innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td>${number(c.site.lat,2)}° / ${number(c.site.lon,2)}°</td><td>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')}</td><td>${fmtHours(c.summary.sunCenter*60)} / ${fmtHours(c.summary.sunLimb*60)}</td><td>${fmtHours(c.summary.earthCenter*60)} / ${fmtHours(c.summary.earthLimb*60)}</td><td>${number(c.summary.maxSun.sun.elevation,1)}°</td><td>${number(c.summary.maxEarth.earth.elevation,1)}°</td><td>${number(c.summary.maxPower.output,0)} W/m²</td><td>${c.mode==='spice'?'SPICE':'DEMO'}</td></tr>`).join('');
+  const free=4-comparison.length;
+  const slots=free>0?comparisonSlotForm()+Array.from({length:free-1},(_,k)=>`<article class="compare-slot compare-slot--empty"><strong>Slot ${comparison.length+k+2}</strong><span>Free</span></article>`).join(''):'';
+  list.innerHTML=cards+slots;
+  if(!comparison.length){
+    body.innerHTML='<tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr>';
+    $('compare').classList.remove('is-detail-open');$('compareMissionDetail').hidden=true;$('compareMissionDetail').innerHTML='';
+  }else{
+    body.innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td>${number(c.site.lat,2)}° / ${number(c.site.lon,2)}°</td><td>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')}</td><td>${fmtHours(c.summary.sunCenter*60)} / ${fmtHours(c.summary.sunLimb*60)}</td><td>${fmtHours(c.summary.earthCenter*60)} / ${fmtHours(c.summary.earthLimb*60)}</td><td>${number(c.summary.maxSun.sun.elevation,1)}°</td><td>${number(c.summary.maxEarth.earth.elevation,1)}°</td><td>${number(c.summary.maxPower.output,0)} W/m²</td><td>${c.mode==='spice'?'SPICE':'DEMO'}</td></tr>`).join('');
+  }
   list.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{
     const id=Number(b.dataset.remove),entry=comparisonScenes.get(id);entry?.dispose?.();comparisonScenes.delete(id);
     const index=comparison.findIndex(c=>c.id===id);if(index>=0)comparison.splice(index,1);comparisonIndices.delete(id);renderComparison();
@@ -154,8 +229,15 @@ function renderComparison(){
     const record=comparison.find(c=>c.id===Number(input.dataset.compareSlider));if(record)updateComparisonCard(record,input.value);
   }));
   list.querySelectorAll('[data-details]').forEach(button=>button.addEventListener('click',()=>openComparisonDetails(Number(button.dataset.details))));
-  if(comparisonViewVisible())requestAnimationFrame(()=>ensureComparisonScenes());
+  list.querySelectorAll('[data-slot-form]').forEach(form=>form.querySelector('[data-slot-add]').addEventListener('click',()=>addComparisonFromSlot(form)));
+  if(comparisonViewMode==='2d')comparison.forEach(c=>renderComparisonPreview2D(c,selectedComparisonRow(c).row));
+  else if(comparisonViewVisible())requestAnimationFrame(()=>ensureComparisonScenes());
 }
+document.querySelectorAll('[data-compare-mode]').forEach(button=>button.addEventListener('click',()=>{
+  comparisonViewMode=button.dataset.compareMode;
+  document.querySelectorAll('[data-compare-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+  renderComparison();
+}));
 function formatMissionUtc(sec){return new Date(J2000_MS+sec*1000).toISOString().replace('T',' ').slice(0,19)+' UTC';}
 function intervalDetailHtml(label,intervals,color){
   const items=intervals||[];
@@ -185,7 +267,7 @@ function openComparisonDetails(id){
       <section class="compare-detail-card"><h5>01 / Mission configuration</h5><div class="compare-detail-fields">
         <div class="compare-detail-field"><span>Landing site</span><strong>${escapeHtml(c.site.name)}</strong></div><div class="compare-detail-field"><span>Coordinates</span><strong>${number(c.site.lat,4)}° / ${number(c.site.lon,4)}°</strong></div>
         <div class="compare-detail-field"><span>Altitude</span><strong>${number(c.site.alt,3)} km</strong></div><div class="compare-detail-field"><span>Mission start</span><strong>${new Date(c.startMs).toISOString().slice(0,16)} UTC</strong></div>
-        <div class="compare-detail-field"><span>Analysis duration</span><strong>${c.hours} h</strong></div><div class="compare-detail-field"><span>Sample spacing</span><strong>${number(stepMin,1)} min</strong></div>
+        <div class="compare-detail-field"><span>Analysis duration</span><strong>${fmtWindow(c.hours)}</strong></div><div class="compare-detail-field"><span>Sample spacing</span><strong>${number(stepMin,1)} min</strong></div>
         <div class="compare-detail-field"><span>Solar array tilt / azimuth</span><strong>${number(c.site.tilt,1)}° / ${number(c.site.panelAz,1)}°</strong></div><div class="compare-detail-field"><span>Panel efficiency</span><strong>${number(c.site.efficiency,1)}%</strong></div>
         <div class="compare-detail-field"><span>Source</span><strong>${escapeHtml(source)}</strong></div><div class="compare-detail-field"><span>Horizon model</span><strong>${c.terrainApplied?'Local horizon profile':'Flat 0° horizon'}</strong></div>
       </div></section>
@@ -249,5 +331,6 @@ function renderCandidates(list){if(!list.length){$('searchResults').innerHTML='<
 
 // The comparison workbench is moved into a hidden overlay by the layout controller.
 // Delay WebGL initialisation until that workspace is visible so each preview gets real dimensions.
-document.querySelector('[data-open-view=\"comparison\"]')?.addEventListener('click',()=>requestAnimationFrame(()=>requestAnimationFrame(ensureComparisonScenes)));
+// Re-render when the comparison opens (the slot form picks up the current date/window) and build the 3D previews.
+document.querySelectorAll('[data-open-view=\"comparison\"]').forEach(b=>b.addEventListener('click',()=>requestAnimationFrame(()=>requestAnimationFrame(renderComparison))));
 window.addEventListener('resize',()=>{if(comparisonViewVisible())requestAnimationFrame(ensureComparisonScenes);});

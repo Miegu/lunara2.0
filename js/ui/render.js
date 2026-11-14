@@ -35,7 +35,7 @@ function drawChart(data,idx){
   ctx.fillStyle='#100b1d';ctx.fillRect(0,0,w,h);
   ctx.font='12px "IBM Plex Mono", monospace';ctx.textAlign='right';ctx.textBaseline='middle';
   for(let v=-90;v<=90;v+=30){ctx.strokeStyle=v===0?'#c7b3e6':'#403052';ctx.lineWidth=v===0?1.7:1;ctx.beginPath();ctx.moveTo(pad.l,y(v));ctx.lineTo(w-pad.r,y(v));ctx.stroke();ctx.fillStyle='#a895bd';ctx.fillText(`${v}°`,pad.l-9,y(v));}
-  ctx.textAlign='center';ctx.textBaseline='top';for(let k=0;k<=6;k++){const i=Math.round(k*(data.length-1)/6);ctx.strokeStyle='#2c203e';ctx.beginPath();ctx.moveTo(x(i),pad.t);ctx.lineTo(x(i),h-pad.b);ctx.stroke();ctx.fillStyle='#a895bd';ctx.fillText(localTime(data[i].sec),x(i),h-pad.b+8);}
+  ctx.textAlign='center';ctx.textBaseline='top';for(let k=0;k<=6;k++){const i=Math.round(k*(data.length-1)/6);ctx.strokeStyle='#2c203e';ctx.beginPath();ctx.moveTo(x(i),pad.t);ctx.lineTo(x(i),h-pad.b);ctx.stroke();ctx.fillStyle='#a895bd';const longSpan=data.at(-1).sec-data[0].sec>48*3600;ctx.fillText(longSpan?dateFromSec(data[i].sec).slice(5,10):localTime(data[i].sec),x(i),h-pad.b+8);}
   if(horizonProfile){ctx.strokeStyle='#8d9fb9';ctx.setLineDash([4,4]);ctx.beginPath();data.forEach((r,i)=>{const val=r.sun.horizon;i?ctx.lineTo(x(i),y(val)):ctx.moveTo(x(i),y(val));});ctx.stroke();ctx.setLineDash([]);}
   const line=(getter,color)=>{ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.beginPath();data.forEach((r,i)=>{const yy=y(getter(r));i?ctx.lineTo(x(i),yy):ctx.moveTo(x(i),yy);});ctx.stroke();};
   line(r=>r.sun.elevation,'#ffc66d');line(r=>r.earth.elevation,'#55b9ff');
@@ -75,7 +75,7 @@ function renderWindowSummary(row,summary){
   const totalH=Math.max(summary.durationMin/60,1e-9),endSec=rows.at(-1).sec;
   const pct=h=>clamp(h/totalH*100,0,100);
   const sunPct=pct(summary.sunCenter),earthPct=pct(summary.earthLimb);
-  $('winRange').textContent=`${isoAt(rows[0].dateMs).slice(0,16)} UTC · ${currentScenario.hours} h`;
+  $('winRange').textContent=`${isoAt(rows[0].dateMs).slice(0,16)} UTC · ${fmtWindow(currentScenario.hours)}`;
   $('winSun').textContent=fmtHours(summary.sunCenter*60);
   $('winSunPct').textContent=`${Math.round(sunPct)}% of the window`;
   $('winSunBar').style.width=`${sunPct}%`;
@@ -91,10 +91,33 @@ function renderWindowSummary(row,summary){
   $('winPowerNext').textContent=`Now ${number(row.output,0)} W/m²`;
 }
 
+// 2D sky panorama and the status chips of the "At the selected time" tiles.
+function renderSkyNow(row){
+  const host=$('horizon2d');
+  if(host)host.innerHTML=horizonPanoramaSVG(rows,row,{terrain:terrainFor(currentScenario.site)});
+  const chip=(id,on,onText,offText)=>{const el=$(id);if(!el)return;el.textContent=on?onText:offText;el.className=`kpi-state ${on?'is-on':'is-off'}`;};
+  chip('kpiSunState',row.sun.centerVisible,'Visible','Hidden');
+  chip('kpiEarthState',row.earth.limbVisible,'In view','Hidden');
+}
+
+// Status box of the "Link to Earth" 3D panel (calculations in js/core/comms.js).
+function renderComms(row){
+  if(!$('commsState'))return;
+  const state=linkState(row);
+  $('commsHud').classList.toggle('is-ok',state.ok);
+  $('commsState').textContent=state.ok?'● Link available':'● No link';
+  $('commsDetail').textContent=state.ok
+    ?`via ${state.best.name} · ${fmtRate(state.budget.rateBps)} · ${number(row.roundTrip,2)} s round trip`
+    :`${state.reason[0].toUpperCase()}${state.reason.slice(1)}`;
+  $('commsStations').innerHTML=state.stations.map(st=>`<span class="${st.inView?'is-on':''}">${st.name} ${number(st.elevation,0)}°</span>`).join('');
+  $('commsWindow').textContent=`Link possible ${Math.round(linkAvailability(rows)*100)}% of the window`;
+}
+
 function renderAll(){
   const row=rows[currentIndex],summary=currentScenario.summary;
-  renderMetrics(row,summary);drawChart(rows,currentIndex);renderTimeline(summary,rows);renderWindowSummary(row,summary);
+  renderMetrics(row,summary);drawChart(rows,currentIndex);renderTimeline(summary,rows);renderWindowSummary(row,summary);renderSkyNow(row);
   $('timeReadout').textContent=isoAt(row.dateMs);$('chartSubtitle').textContent=`${currentScenario.site.name} · ${currentScenario.hours} h · UTC`;
   $('skyStatus').textContent=`Sun ${number(row.sun.elevation,1)}° / Earth ${number(row.earth.elevation,1)}°`;
-  updateSky3D(row);updateMoon3D(currentScenario.site);
+  sky3d?.setTerrain?.(profileForSite(currentScenario.site)); // LOLA relief (or flat) around the observer in 3D
+  updateSky3D(row);updateMoon3D(currentScenario.site,row);renderComms(row);
 }

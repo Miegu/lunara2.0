@@ -1,0 +1,8 @@
+# Sitios para tools/lola_horizon.py. lat/lon planetocéntricas, longitud este positiva.
+# El nombre define el fichero de salida: horizons/<nombre-en-minúsculas-con-guiones>.csv
+# Si añades un sitio aquí, añádelo también a PRESETS en index.html (campo horizon).
+name,lat,lon
+South pole site A,-89.2,23.1
+South pole site B,-85.0,23.1
+Near Shackleton,-89.5,0
+Shackleton crater floor,-89.67,129.78

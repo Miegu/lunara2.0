@@ -1,0 +1,63 @@
+/* Comparison as the main tool: full-screen view, 4 slots side by side, add-site form in the free slot,
+   3D/2D preview switch, ★ for the best value, readable text sizes. Loaded last; overrides 09-comparison-studio.css. */
+
+/* Full screen (the overlay normally covers only the right column) */
+.nova-view-overlay.is-wide{left:18px;right:18px}
+
+/* Toolbar */
+#compare .compare-toolbar strong{font:700 14px "Sora","Space Grotesk",sans-serif;letter-spacing:0;color:#eef6ff}
+#compare .compare-toolbar small{font-size:13px}
+#compare .compare-toolbar .btn{font-size:13px}
+.compare-viewmode{display:inline-flex;border:1px solid rgba(136,187,230,.3);border-radius:9px;overflow:hidden}
+.compare-viewmode button{padding:7px 14px;border:0;background:transparent;color:#a9c0d8;font:700 13px "Space Grotesk",sans-serif;cursor:pointer}
+.compare-viewmode button[aria-pressed="true"]{background:#8adfff;color:#06111f}
+.compare-viewmode button:focus-visible{outline:2px solid #8bdfff;outline-offset:-2px}
+
+/* Four columns on wide screens */
+#compare .compare-cards-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){#compare .compare-cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){#compare .compare-cards-grid{grid-template-columns:1fr}}
+
+/* Mission cards: readable text */
+#compare .mission-compare-card__identity strong{font-size:15px}
+#compare .mission-compare-card__identity small,#compare .compare-preview__tag,#compare .compare-preview__quality{font-size:11px}
+#compare .compare-preview{height:200px}
+#compare .compare-preview__host{position:absolute;inset:0}
+#compare .compare-preview--2d .compare-preview__host{display:flex;align-items:center;padding:32px 2px 24px}
+#compare .compare-preview--2d .h2d{width:100%;height:100%}
+#compare .compare-preview__readout{font-size:12px}
+#compare .compare-card-scrubber span{font-size:12px}
+#compare .compare-card-kpis{grid-template-columns:1fr;gap:6px;padding:8px 12px}
+#compare .compare-card-kpi{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:0 8px;padding:7px 10px}
+#compare .compare-card-kpi span{font:600 13px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:#dfeaf7}
+#compare .compare-card-kpi strong{font:700 18px "Sora","Space Grotesk",sans-serif;letter-spacing:-.02em;text-align:right;white-space:nowrap}
+#compare .compare-card-kpi small{grid-column:1/-1;font-size:12px;color:#8ea6c2}
+#compare .compare-card-kpi--sun strong{color:#ffc66d}
+#compare .compare-card-kpi--earth strong{color:#6cc4ff}
+#compare .compare-card-kpi--power strong{color:#5ce0ae}
+#compare .compare-card-kpi .compare-best{display:inline;margin-left:6px;color:#ffd84d;font:700 17px "Sora",sans-serif}
+#compare .panel-head h3{font-size:13px}
+#compare .panel-head small{font-size:11px}
+#compare .mission-compare-card__meta span{font-size:11px}
+#compare .mission-compare-card__actions .btn{font-size:13px}
+
+/* Free slots */
+.compare-slot{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:260px;padding:18px;border:1px dashed rgba(136,187,230,.35);border-radius:16px;background:rgba(10,20,36,.6)}
+.compare-slot--empty{align-items:center;justify-content:center;gap:4px;color:#7f98b5}
+.compare-slot--empty strong{font:700 15px "Sora",sans-serif;color:#a9c0d8}
+.compare-slot--empty span{font-size:13px}
+.compare-slot--form{border-style:solid;border-color:rgba(138,223,255,.45);background:linear-gradient(155deg,rgba(20,44,72,.75),rgba(8,16,30,.9))}
+.compare-slot__title{display:flex;align-items:center;gap:8px;font:700 17px "Sora","Space Grotesk",sans-serif;color:#eef6ff}
+.compare-slot__title span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#8adfff;color:#06111f;font-size:16px}
+.compare-slot__row{display:grid;grid-template-columns:1fr;gap:10px}
+.compare-slot__field{display:flex;flex-direction:column;gap:6px;min-width:0;font:600 13px "Space Grotesk",sans-serif;color:#93abc7}
+.compare-slot__field select,.compare-slot__field input{width:100%;min-width:0;padding:10px 11px;border:1px solid #2b4058;border-radius:10px;background:#091321;color:#eef6ff;font:600 14px "Space Grotesk",sans-serif}
+.compare-slot__field select:focus-visible,.compare-slot__field input:focus-visible{outline:2px solid #8bdfff;outline-offset:1px}
+.compare-slot .btn{font-size:14px;padding:11px 14px}
+.compare-slot__msg{margin:0;min-height:1.2em;font-size:13px;color:#ffcf7a}
+
+/* Summary table */
+#compare .compare-matrix-title strong{font:700 14px "Sora",sans-serif;letter-spacing:0}
+#compare .compare-matrix-title span{font-size:12px}
+#compare .compare-matrix th{font-size:12px}
+#compare .compare-matrix td{font-size:13px}

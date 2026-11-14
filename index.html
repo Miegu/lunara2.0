@@ -43,6 +43,7 @@
 
 <link rel="stylesheet" href="css/09-comparison-studio.css">
 <link rel="stylesheet" href="css/10-data-panel.css">
+<link rel="stylesheet" href="css/11-compare.css">
 
 </head>
 <body>
@@ -130,13 +131,20 @@
       <div class="panel-body">
         <details class="control-group" open><summary><span><i>01</i> Landing site</span><b>＋</b></summary><div class="control-group__body">
         <div class="field"><label for="preset">Landing site</label><select id="preset">
+          <optgroup label="South pole · real terrain (LOLA)">
+            <option value="shackleton" selected>Shackleton region</option>
+            <option value="shackletonFloor">Shackleton crater floor</option>
+            <option value="siteA">South pole site A</option>
+            <option value="siteB">South pole site B</option>
+          </optgroup>
+          <optgroup label="Other references · flat horizon">
+            <option value="apollo">Apollo 11</option>
+            <option value="huygens">Mount Huygens</option>
+            <option value="marius">Marius Hills</option>
+          </optgroup>
           <option value="custom">Custom coordinates</option>
-          <option value="shackleton" selected>Shackleton region · LUNARA reference</option>
-          <option value="apollo">Apollo 11 · historical reference</option>
-          <option value="huygens">Mount Huygens · topographic reference</option>
-          <option value="marius">Marius Hills · equatorial reference</option>
         </select></div>
-        <div class="field"><label for="siteName">Scenario name</label><input id="siteName" value="Shackleton · reference" maxlength="50"></div>
+        <div class="field"><label for="siteName">Scenario name</label><input id="siteName" value="Shackleton region" maxlength="50"></div>
         <div class="field-row">
           <div class="field"><label for="lat">Planetocentric latitude (°)</label><input id="lat" type="number" min="-90" max="90" step="0.001" value="-89.5"></div>
           <div class="field"><label for="lon">Longitude (°)</label><input id="lon" type="number" min="-180" max="180" step="0.001" value="0"></div>
@@ -147,8 +155,11 @@
 
         <details class="control-group"><summary><span><i>02</i> Date & duration</span><b>＋</b></summary><div class="control-group__body">
         <div class="field"><label for="date">Start (UTC)</label><input id="date" type="datetime-local" value="2026-11-10T12:00" step="60"></div>
-        <div class="field"><label for="duration">Window</label><select id="duration"><option value="24">24 hours</option><option value="48">48 hours</option><option value="72">72 hours</option></select></div>
-        <div class="field"><label for="sampleStep">Display time step</label><select id="sampleStep"><option value="10">10 min (interpolated)</option><option value="15" selected>15 min (interpolated)</option><option value="30">30 min (interpolated)</option><option value="60">60 min (source samples)</option></select></div>
+        <div class="field field--range"><label for="endDate">End (UTC)</label><input id="endDate" type="datetime-local" value="2026-12-10T12:00" step="60">
+          <input id="duration" type="hidden" value="720"><!-- window length in hours, derived from start/end (js/app/controls.js) -->
+          <div class="range-chips" role="group" aria-label="Quick window length"><button type="button" data-range-days="1">1 d</button><button type="button" data-range-days="3">3 d</button><button type="button" data-range-days="7">7 d</button><button type="button" data-range-days="30">30 d</button><button type="button" data-range-days="90">90 d</button><button type="button" data-range-days="365">1 yr</button></div>
+        </div>
+        <div class="field"><label for="sampleStep">Display time step</label><select id="sampleStep"><option value="10">10 min</option><option value="15" selected>15 min</option><option value="30">30 min</option><option value="60">60 min</option><option value="180">3 h</option><option value="360">6 h</option></select></div>
         <div class="btn-row control-actions"><button class="btn primary full" id="calculate">⟳ Run analysis</button><button class="btn ghost" id="addCompare">＋ Add to comparison</button></div>
         </div></details>
 
@@ -188,14 +199,14 @@
       </div>
       <div class="visual-grid" id="visuals">
         <section class="panel"><div class="panel-head"><h3>Local sky · 3D</h3><small>AZIMUTH · ELEVATION</small></div><div class="scene-wrap" id="skyScene"><div class="scene-label">View from the mission site</div><div class="scene-status" id="skyStatus">Awaiting analysis</div><div class="scene-help">Drag to rotate · scroll to zoom</div></div><div class="legend"><span><i style="background:#ffc66d"></i> Sun</span><span><i style="background:#55b9ff"></i> Earth</span><span><i style="background:#5ce0ae"></i> visible horizon</span><span><i style="background:#8293aa"></i> schematic terrain</span></div></section>
-        <section class="panel"><div class="panel-head"><h3>Lunar location · 3D</h3><small>SITE LOCATION</small></div><div class="scene-wrap" id="moonScene"><div class="scene-label">Moon · selected site</div><div class="scene-status" id="moonStatus">Spherical model</div><div class="scene-help">Drag to orbit · scroll to zoom</div></div><div class="legend"><span><i style="background:#ff9e73"></i> selected landing site</span><span class="inline-note">Illustrative global relief; not LOLA topography.</span></div></section>
+        <section class="panel"><div class="panel-head"><h3>Link to Earth · 3D</h3><small>DSN · DIRECT-TO-EARTH</small></div><div class="scene-wrap" id="moonScene"><div class="scene-label">Moon · Earth · DSN</div><div class="scene-status" id="moonStatus">—</div><div class="scene-help">Drag to orbit · scroll to zoom</div><div class="comms-hud" id="commsHud" aria-live="polite"><div class="comms-hud__row"><span class="comms-hud__state" id="commsState">—</span><span class="comms-hud__detail" id="commsDetail">—</span></div><div class="comms-hud__row"><span class="comms-hud__stations" id="commsStations"></span><span class="comms-hud__window" id="commsWindow">—</span></div></div></div><div class="legend"><span><i style="background:#ff9e73"></i> landing site</span><span><i style="background:#5ce0ae"></i> link</span><span><i style="background:#ff7d89"></i> no link</span><span class="inline-note">Not to scale · sizes and distance are schematic.</span></div></section>
       </div>
 
       <div class="kpis">
-        <div class="kpi"><div class="label">Sun above horizon</div><strong class="sun-text" id="kpiSun">—</strong><small id="kpiSunSub">elevation at selected time</small></div>
-        <div class="kpi"><div class="label">Earth above horizon</div><strong class="earth-text" id="kpiEarth">—</strong><small id="kpiEarthSub">geometric disk visibility</small></div>
-        <div class="kpi"><div class="label">Array irradiance</div><strong class="green-text" id="kpiPower">—</strong><small id="kpiPowerSub">estimated power per m²</small></div>
-        <div class="kpi"><div class="label">Radio delay (round trip)</div><strong id="kpiDelay">—</strong><small>vacuum propagation, geometric distance × 2</small></div>
+        <div class="kpi kpi--sun"><div class="label"><span class="kpi-icon">☀</span>Sun<span class="kpi-state" id="kpiSunState">—</span></div><strong class="sun-text" id="kpiSun">—</strong><small id="kpiSunSub">elevation at selected time</small></div>
+        <div class="kpi kpi--earth"><div class="label"><span class="kpi-icon">◉</span>Earth<span class="kpi-state" id="kpiEarthState">—</span></div><strong class="earth-text" id="kpiEarth">—</strong><small id="kpiEarthSub">geometric disk visibility</small></div>
+        <div class="kpi kpi--power"><div class="label"><span class="kpi-icon">⚡</span>Solar power</div><strong class="green-text" id="kpiPower">—</strong><small id="kpiPowerSub">estimated power per m²</small></div>
+        <div class="kpi kpi--delay"><div class="label"><span class="kpi-icon">📡</span>Radio delay</div><strong id="kpiDelay">—</strong><small>round trip to Earth</small></div>
       </div>
 
       <details class="mission-foldout" id="telemetryFold">
@@ -222,7 +233,8 @@
     <div class="compare-toolbar">
       <div><strong id="compareCount">00 / 04 MISSIONS STORED</strong><small>Save each analysed site/date as an independent mission snapshot.</small></div>
       <div class="btn-row compare-toolbar-actions">
-        <button id="compareAddCurrent" class="btn primary small" type="button">＋ Add active mission</button>
+        <div class="compare-viewmode" role="group" aria-label="Preview type"><button type="button" data-compare-mode="3d" aria-pressed="true">3D</button><button type="button" data-compare-mode="2d" aria-pressed="false">2D</button></div>
+        <button id="compareAddCurrent" class="btn primary small" type="button">＋ Add current scenario</button>
         <button id="clearCompare" class="btn small ghost" type="button">Clear all</button>
         <button id="exportCompare" class="btn small ghost" type="button">Export CSV</button>
       </div>
@@ -243,7 +255,7 @@
       <details class="mission-foldout" id="integrityFold">
         <summary class="mission-foldout__summary"><span class="foldout-number">04</span><span class="foldout-copy"><strong>Model integrity</strong><small>Data provenance · assumptions · scientific limitations</small></span><span class="foldout-action">OPEN PANEL <b>＋</b></span></summary>
         <div class="mission-foldout__content">
-      <section class="panel" id="science" style="margin-top:0"><div class="panel-head"><h3>Scientific scope & limitations</h3><small>MODEL TRACEABILITY</small></div><div class="panel-body"><div class="technical"><div class="tech-item"><strong>Ephemeris / geometry</strong><p>With positions.json: Sun and Earth vectors precomputed by SPICE in IAU_MOON. Linear interpolation is performed within dataset coverage; no extrapolation is applied beyond the available range.</p></div><div class="tech-item"><strong>Horizon / terrain</strong><p>Without a profile: ideal tangential horizon. With CSV: local horizon-elevation mask by azimuth. LOLA DEM integration is still required for terrain-realistic occultation.</p></div><div class="tech-item"><strong>Communications</strong><p>Visible Earth disk is a preliminary geometric filter. Antennas, RF power, frequency, polarization, ground stations, 3D terrain occultation and link budget are not modeled.</p></div><div class="tech-item"><strong>Power</strong><p>Irradiance is projected onto a flat panel with configurable tilt, azimuth and efficiency. This is not a substitute for an electrical/thermal spacecraft power-system model.</p></div><div class="tech-item"><strong>Thermal environment</strong><p>No falsely precise surface temperature is displayed. A thermal model needs thermal inertia, conductivity, emissivity, albedo, regolith properties and topography.</p></div><div class="tech-item"><strong>Data quality</strong><p>Time resolution and coverage are determined by the loaded file. 3D models in this version are illustrative, not a certified topographic mesh.</p></div></div><div id="scienceNotice" class="status-note warn" style="margin-top:13px">IMPORTANT: demo data must not be used for mission decisions. Load a validated SPICE dataset and a LOLA-derived horizon profile for a more realistic assessment.</div></div></section>
+      <section class="panel" id="science" style="margin-top:0"><div class="panel-head"><h3>Scientific scope & limitations</h3><small>MODEL TRACEABILITY</small></div><div class="panel-body"><div class="technical"><div class="tech-item"><strong>Ephemeris / geometry</strong><p>With positions.json: Sun and Earth vectors precomputed by SPICE in IAU_MOON. Linear interpolation is performed within dataset coverage; no extrapolation is applied beyond the available range.</p></div><div class="tech-item"><strong>Horizon / terrain</strong><p>Without a profile: ideal tangential horizon. With CSV: local horizon-elevation mask by azimuth. LOLA DEM integration is still required for terrain-realistic occultation.</p></div><div class="tech-item"><strong>Communications</strong><p>Direct-to-Earth link: Earth above the site horizon (terrain included) and a DSN complex (Goldstone, Madrid, Canberra) seeing the Moon above 10°, using a low-precision lunar ephemeris (~0.2°). Data rate is an idealised link budget (free-space loss, DSN dish gain, system noise, 3 dB margin). Not modeled: atmosphere/rain fade, pointing and polarization losses, DSN scheduling, relay satellites.</p></div><div class="tech-item"><strong>Power</strong><p>Irradiance is projected onto a flat panel with configurable tilt, azimuth and efficiency. This is not a substitute for an electrical/thermal spacecraft power-system model.</p></div><div class="tech-item"><strong>Thermal environment</strong><p>No falsely precise surface temperature is displayed. A thermal model needs thermal inertia, conductivity, emissivity, albedo, regolith properties and topography.</p></div><div class="tech-item"><strong>Data quality</strong><p>Time resolution and coverage are determined by the loaded file. 3D models in this version are illustrative, not a certified topographic mesh.</p></div></div><div id="scienceNotice" class="status-note warn" style="margin-top:13px">IMPORTANT: demo data must not be used for mission decisions. Load a validated SPICE dataset and a LOLA-derived horizon profile for a more realistic assessment.</div></div></section>
         </div>
       </details>
     </main>
@@ -258,6 +270,9 @@
 <script defer src="js/core/state.js"></script>
 <script defer src="js/core/ephemeris.js"></script>
 <script defer src="js/core/geometry.js"></script>
+<script defer src="js/data/terrain.js"></script>
+<script defer src="js/core/comms.js"></script>
+<script defer src="js/ui/horizon-2d.js"></script>
 <script defer src="js/ui/render.js"></script>
 <script defer src="js/ui/scenes-3d.js"></script>
 <script defer src="js/ui/comparison.js"></script>

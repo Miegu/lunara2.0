@@ -13,11 +13,16 @@ const J2000_MS = Date.UTC(2000,0,1,12,0,0);
 const AU_KM = 149597870.7, SUN_RADIUS_KM = 695700, EARTH_RADIUS_KM = 6371;
 const SOLAR_CONSTANT = 1361, C_KM_S = 299792.458;
 const MOON_A_DEFAULT = 1738.1, MOON_C_DEFAULT = 1736.0;
+// Catalog sites. `horizon` = precomputed LOLA horizon (tools/lola_horizon.py -> horizons/*.csv).
+// To add a polar site: add it to tools/sites_south_pole.csv, run the tool, then add it here and in index.html.
 const PRESETS = {
-  shackleton:{name:'Shackleton · reference',lat:-89.5,lon:0,alt:0},
-  apollo:{name:'Apollo 11 · historical reference',lat:0.67,lon:23.47,alt:0},
-  huygens:{name:'Mount Huygens · topographic reference',lat:19.9,lon:-2.9,alt:5.5},
-  marius:{name:'Marius Hills · equatorial reference',lat:14,lon:-56,alt:0}
+  shackleton:{name:'Shackleton region',lat:-89.5,lon:0,alt:0,horizon:'horizons/near-shackleton.csv'},
+  shackletonFloor:{name:'Shackleton crater floor',lat:-89.67,lon:129.78,alt:0,horizon:'horizons/shackleton-crater-floor.csv'},
+  siteA:{name:'South pole site A',lat:-89.2,lon:23.1,alt:0,horizon:'horizons/south-pole-site-a.csv'},
+  siteB:{name:'South pole site B',lat:-85.0,lon:23.1,alt:0,horizon:'horizons/south-pole-site-b.csv'},
+  apollo:{name:'Apollo 11',lat:0.67,lon:23.47,alt:0},
+  huygens:{name:'Mount Huygens',lat:19.9,lon:-2.9,alt:5.5},
+  marius:{name:'Marius Hills',lat:14,lon:-56,alt:0}
 };
 let ephemeris = null, dataMode = 'demo', currentScenario = null, rows = [], comparison = [], horizonProfile = null, horizonProfileSite = null;
 let currentIndex = 0, playTimer = null, sky3d = null, moon3d = null, fallbackVisuals = null;

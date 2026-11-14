@@ -28,32 +28,153 @@ function createSky3D(){
   const up=()=>dragging=false;
   renderer.domElement.addEventListener('pointerdown',down);renderer.domElement.addEventListener('pointermove',move);renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);
   renderer.domElement.addEventListener('wheel',e=>{zoom=clamp(zoom+(e.deltaY>0?.07:-.07),.65,1.7);camera.fov=67/zoom;camera.updateProjectionMatrix();},{passive:true});
-  function positionBody(mesh,label,el,az,r){const e=el*Math.PI/180,a=az*Math.PI/180;const v=new THREE.Vector3(r*Math.cos(e)*Math.sin(a),r*Math.sin(e),-r*Math.cos(e)*Math.cos(a));mesh.position.copy(v);label.position.copy(v.clone().add(new THREE.Vector3(0,8,0)));}
+  // Directions are measured from the observer's eye (camera position), so on-screen elevations are the real ones.
+  const EYE=camera.position.clone(),GROUND_Y=EYE.y-1; // observer's eyes 1 unit above the ground
+  const dirFromEye=(el,az,r)=>{const e=el*Math.PI/180,a=az*Math.PI/180;return new THREE.Vector3(EYE.x+r*Math.cos(e)*Math.sin(a),EYE.y+r*Math.sin(e),EYE.z-r*Math.cos(e)*Math.cos(a));};
+  function positionBody(mesh,label,el,az,r){const v=dirFromEye(el,az,r);mesh.position.copy(v);label.position.copy(v.clone().add(new THREE.Vector3(0,8,0)));}
   function update(row){positionBody(sun,sunLabel,row.sun.elevation,row.sun.azimuth,100);positionBody(earth,earthLabel,row.earth.elevation,row.earth.azimuth,103);sunLight.position.copy(sun.position);}
+
+  // Terrain ring: the site's horizon silhouette (LOLA profile from js/data/terrain.js, or flat 0°) drawn all
+  // around the observer at the same angles as the 2D panorama. It is closer than the Sun (r=100) and Earth (r=103),
+  // so they disappear behind real terrain exactly when the calculation says they are hidden.
+  // The terrain is a surface that rises from the observer's feet (ground plane y=0) to the horizon ridge at
+  // distance TERRAIN_R, whose height gives exactly the horizon elevation of each azimuth.
+  const TERRAIN_R=95,TERRAIN_STEPS=360;
+  const RING_DIST=[95,86,76,66,56,47,39,32,26,21,16.5,12.5,9,6,3.6,1.8,.6];
+  let terrainTex=null;try{terrainTex=new THREE.TextureLoader().load('models/moonsurface.jpg');terrainTex.wrapS=terrainTex.wrapT=THREE.RepeatWrapping;terrainTex.colorSpace=THREE.SRGBColorSpace;}catch(e){console.warn('No terrain texture',e);}
+  const terrainMat=new THREE.MeshStandardMaterial({map:terrainTex,color:0xbdb8b0,roughness:1,metalness:0,side:THREE.DoubleSide});
+  const ridgeMat=new THREE.LineBasicMaterial({color:0xa9c1dc,transparent:true,opacity:.7});
+  // Hide the old smooth ground sphere: the terrain surface now covers everything below the horizon.
+  scene.traverse(o=>{if(o.isMesh&&o.geometry?.parameters?.radius===400)o.visible=false;});
+  let terrainGroup=null,terrainProfile;
+  // Circular moving average of the ridge heights (window = 2*halfWidth+1 azimuth steps).
+  function smoothRing(values,halfWidth){
+    if(halfWidth<1)return values;
+    const n=values.length,out=new Array(n);
+    for(let i=0;i<n;i++){let s=0;for(let j=-halfWidth;j<=halfWidth;j++)s+=values[(i+j+n)%n];out[i]=s/(2*halfWidth+1);}
+    return out;
+  }
+  function buildTerrain(profile){
+    const N=TERRAIN_STEPS,rings=RING_DIST.length,pos=[],uv=[],idx=[],ridge=[];
+    // Ridge height per azimuth: exactly the horizon angle of the profile (this is what hides the Sun/Earth).
+    const yTop=Array.from({length:N},(_,i)=>EYE.y+TERRAIN_R*Math.tan((profile?horizonAt(i*360/N,profile):0)*Math.PI/180));
+    // Closer rings use an increasingly smoothed ridge: the 0.5° steps of the profile would otherwise
+    // run down the slope as thin bright/dark radial stripes under the directional sunlight.
+    const ringHeights=RING_DIST.map((d,k)=>{
+      const f=Math.pow(Math.max(0,(d-RING_DIST.at(-1))/(TERRAIN_R-RING_DIST.at(-1))),1.6);
+      const smooth=smoothRing(yTop,k===0?0:Math.round(2+k*1.5));
+      return smooth.map(y=>GROUND_Y+(y-GROUND_Y)*f);
+    });
+    for(let i=0;i<N;i++){
+      const a=i*2*Math.PI/N,sinA=Math.sin(a),cosA=Math.cos(a);
+      RING_DIST.forEach((d,k)=>{
+        const x=EYE.x+d*sinA,z=EYE.z-d*cosA;
+        pos.push(x,ringHeights[k][i],z);uv.push(x/9,z/9); // top-down texture projection: even detail everywhere
+      });
+      ridge.push(new THREE.Vector3(EYE.x+(TERRAIN_R-.3)*sinA,yTop[i]+.05,EYE.z-(TERRAIN_R-.3)*cosA));
+    }
+    ridge.push(ridge[0].clone());
+    // The last column connects back to the first one (shared vertices: no lighting seam at north).
+    for(let i=0;i<N;i++)for(let k=0;k<rings-1;k++){
+      const a0=i*rings+k,a1=a0+1,b0=((i+1)%N)*rings+k,b1=b0+1;idx.push(a0,a1,b0,b0,a1,b1);
+    }
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();
+    const centre=new THREE.Mesh(new THREE.CircleGeometry(RING_DIST.at(-1)+.05,48),terrainMat);centre.rotation.x=-Math.PI/2;centre.position.set(EYE.x,GROUND_Y,EYE.z);
+    const group=new THREE.Group();group.add(new THREE.Mesh(geo,terrainMat),centre,new THREE.Line(new THREE.BufferGeometry().setFromPoints(ridge),ridgeMat));
+    return group;
+  }
+  function setTerrain(profile){
+    if(terrainGroup&&profile===terrainProfile)return;
+    terrainProfile=profile;
+    if(terrainGroup){scene.remove(terrainGroup);terrainGroup.traverse(o=>o.geometry?.dispose());}
+    terrainGroup=buildTerrain(profile);scene.add(terrainGroup);
+  }
+  setTerrain(null);
+
   const resize=()=>{const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);};new ResizeObserver(resize).observe(host);
-  const animate=()=>{requestAnimationFrame(animate);sun.rotation.y+=0.0015;earth.rotation.y+=.0015;renderer.render(scene,camera);};animate();return {scene,camera,renderer,update};
+  const animate=()=>{requestAnimationFrame(animate);sun.rotation.y+=0.0015;earth.rotation.y+=.0015;renderer.render(scene,camera);};animate();return {scene,camera,renderer,update,setTerrain};
 }
 
-// 3D Moon globe: crater-texture is procedural, not LOLA.
+// "Link to Earth" 3D panel: a georeferenced Moon lit from the real Sun direction, the Earth in its real
+// direction (turned so the hemisphere and DSN stations facing the Moon are right) and the line of sight
+// from the landing site to the best DSN station (js/core/comms.js). Sizes and distance are schematic.
+// Frames: IAU_MOON (x: prime meridian, z: north pole) -> three.js (x, y=z, z=-y).
 async function createMoon3D(){
   if(!THREE) throw new Error('Three.js is unavailable.');
-  if(!GLTFLoader) throw new Error('GLTFLoader is unavailable.');
-  const host=$('moonScene'),scene=new THREE.Scene();scene.background=new THREE.Color(0x0b0718);
-  const camera=new THREE.PerspectiveCamera(43,host.clientWidth/host.clientHeight,.1,100);let radius=3.5,theta=.5,phi=1.1;
-  const updateCam=()=>{camera.position.set(radius*Math.sin(phi)*Math.sin(theta),radius*Math.cos(phi),radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(0,0,0);};updateCam();
+  const host=$('moonScene'),scene=new THREE.Scene();
+  try{const sky=new THREE.TextureLoader().load('models/starssky.jpg');sky.mapping=THREE.EquirectangularReflectionMapping;sky.colorSpace=THREE.SRGBColorSpace;scene.background=sky;}catch(e){scene.background=new THREE.Color(0x05070d);}
+  const camera=new THREE.PerspectiveCamera(38,Math.max(1,host.clientWidth)/Math.max(1,host.clientHeight),.05,300);
   const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,host.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;host.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0xffffff,.25));
-  const siteTarget=new THREE.Object3D();scene.add(siteTarget);
-  const siteLight=new THREE.SpotLight(0xfff0d0,6,18,Math.PI*2/180,.5,1);siteLight.target=siteTarget;scene.add(siteLight);
-  let moonMesh=null;
-  await new Promise((resolve,reject)=>{new GLTFLoader().load('models/moon.glb',gltf=>{const model=gltf.scene;model.scale.set(1.27,1.27,1.27);scene.add(model);moonMesh=model;resolve();},undefined,reject);});
-  const axes=new THREE.AxesHelper(1.65);axes.material.transparent=true;axes.material.opacity=.22;scene.add(axes);
-  let dragging=false,px=0,py=0;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture?.(e.pointerId);});renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;theta-=(e.clientX-px)*.007;phi=clamp(phi+(e.clientY-py)*.007,.15,Math.PI-.15);px=e.clientX;py=e.clientY;updateCam();});renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);renderer.domElement.addEventListener('wheel',e=>{radius=clamp(radius+(e.deltaY>0?.18:-.18),1.8,7);updateCam();},{passive:true});
-  function update(site){const lat=site.lat*Math.PI/180,lon=site.lon*Math.PI/180;const n=new THREE.Vector3(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));const p=n.clone().multiplyScalar(1.30);siteLight.position.copy(n).multiplyScalar(2.6);siteTarget.position.copy(p);$('moonStatus').textContent=`${number(site.lat,2)}° / ${number(site.lon,2)}°`}
-  const resize=()=>{camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight);};new ResizeObserver(resize).observe(host);
-  const animate=()=>{requestAnimationFrame(animate);if(moonMesh)moonMesh.rotation.y+=.0007;renderer.render(scene,camera);};animate();return {scene,camera,renderer,update};
+  const MOON_R=1,EARTH_R=1.1,EARTH_DIST=6.5,Y=new THREE.Vector3(0,1,0);
+  const toThree=v=>new THREE.Vector3(v[0],v[2],-v[1]);
+  const fromLatLon=(lat,lon,r=1)=>{const p=lat*DEG,l=lon*DEG;return new THREE.Vector3(r*Math.cos(p)*Math.cos(l),r*Math.sin(p),-r*Math.cos(p)*Math.sin(l));};
+  const texture=path=>{try{const t=new THREE.TextureLoader().load(path);t.colorSpace=THREE.SRGBColorSpace;return t;}catch(e){console.warn('Missing texture',path,e);return null;}};
+
+  // Lighting: the Sun is a directional light from its real direction (lunar day/night, Earth phases).
+  scene.add(new THREE.AmbientLight(0xffffff,.16));
+  const sunLight=new THREE.DirectionalLight(0xffffff,2.8);scene.add(sunLight,sunLight.target);
+
+  const moon=new THREE.Mesh(new THREE.SphereGeometry(MOON_R,128,64),new THREE.MeshStandardMaterial({map:texture('models/moonsurface.jpg'),roughness:1,metalness:0}));
+  scene.add(moon);
+
+  const earth=new THREE.Group();scene.add(earth);
+  earth.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R,64,32),new THREE.MeshStandardMaterial({map:texture('models/earthsurface.jpg'),roughness:.85,metalness:0})));
+  const stationMarkers=DSN_STATIONS.map(st=>{
+    const marker=new THREE.Mesh(new THREE.SphereGeometry(.06,16,12),new THREE.MeshBasicMaterial({color:0x8a94a6}));
+    marker.position.copy(fromLatLon(st.lat,st.lon,EARTH_R*1.01));
+    const label=makeLabelSprite(st.name.toUpperCase(),'#cfe3f7');label.scale.set(1.05,.3,1);label.position.copy(fromLatLon(st.lat,st.lon,EARTH_R*1.35));
+    earth.add(marker,label);return {marker,label};
+  });
+
+  const site=new THREE.Group();scene.add(site);
+  const siteDot=new THREE.Mesh(new THREE.SphereGeometry(.045,16,12),new THREE.MeshBasicMaterial({color:0xff9e73}));
+  const siteHalo=new THREE.Mesh(new THREE.SphereGeometry(.09,16,12),new THREE.MeshBasicMaterial({color:0xff9e73,transparent:true,opacity:.3}));
+  site.add(siteDot,siteHalo);
+
+  const linkGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(1,0,0)]);
+  const linkOk=new THREE.LineBasicMaterial({color:0x5ce0ae});
+  const linkNo=new THREE.LineDashedMaterial({color:0xff7d89,dashSize:.18,gapSize:.12});
+  const link=new THREE.Line(linkGeo,linkOk);scene.add(link);
+
+  // Camera orbits around a point between the Moon and the Earth; drag to orbit, wheel to zoom.
+  const target=new THREE.Vector3(EARTH_DIST*.5,-1.1,0); // lower target: bodies sit above the status box
+  let radius=10.2,theta=0,phi=1.32;
+  const updateCam=()=>{camera.position.set(target.x+radius*Math.sin(phi)*Math.sin(theta),target.y+radius*Math.cos(phi),target.z+radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(target);};updateCam();
+  let dragging=false,px=0,py=0;
+  renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture?.(e.pointerId);});
+  renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;theta-=(e.clientX-px)*.007;phi=clamp(phi+(e.clientY-py)*.007,.15,Math.PI-.15);px=e.clientX;py=e.clientY;updateCam();});
+  renderer.domElement.addEventListener('pointerup',()=>dragging=false);renderer.domElement.addEventListener('pointercancel',()=>dragging=false);
+  renderer.domElement.addEventListener('wheel',e=>{radius=clamp(radius+(e.deltaY>0?.4:-.4),3,16);updateCam();},{passive:true});
+
+  // Orthonormal basis whose first axis is `forward` and second axis is as close as possible to `upHint`.
+  const basis=(forward,upHint)=>{const f=forward.clone().normalize();const u=upHint.clone().sub(f.clone().multiplyScalar(upHint.dot(f)));if(u.lengthSq()<1e-8)u.set(0,0,1);u.normalize();return new THREE.Matrix4().makeBasis(f,u,new THREE.Vector3().crossVectors(f,u));};
+
+  function update(siteData,row){
+    $('moonStatus').textContent=`${number(siteData.lat,2)}° / ${number(siteData.lon,2)}°`;
+    site.position.copy(fromLatLon(siteData.lat,siteData.lon,MOON_R*1.003));
+    if(!row)return;
+    let sunPos,earthPos;try{sunPos=interpolateVector(row.sec,'sun');earthPos=interpolateVector(row.sec,'earth');}catch(e){return;}
+    sunLight.position.copy(toThree(sunPos).normalize().multiplyScalar(30));
+    const earthDir=toThree(earthPos).normalize();
+    earth.position.copy(earthDir.clone().multiplyScalar(EARTH_DIST));
+    // Turn the Earth so its sub-lunar point faces the Moon (north kept roughly up; schematic).
+    const sl=subLunarPoint(row.dateMs);
+    const rot=basis(earthDir.clone().negate(),Y).multiply(basis(fromLatLon(sl.lat,sl.lon),Y).transpose());
+    earth.quaternion.setFromRotationMatrix(rot);
+    // Stations and link
+    const state=linkState(row);
+    state.stations.forEach((st,i)=>stationMarkers[i].marker.material.color.set(st.inView?0x5ce0ae:0x8a94a6));
+    earth.updateMatrixWorld(true);
+    const end=state.best?stationMarkers[DSN_STATIONS.findIndex(s=>s.name===state.best.name)].marker.getWorldPosition(new THREE.Vector3()):earth.position.clone();
+    linkGeo.setFromPoints([site.position.clone(),end]);
+    link.material=state.ok?linkOk:linkNo;if(!state.ok)link.computeLineDistances();
+    siteDot.material.color.set(state.ok?0x5ce0ae:0xff9e73);siteHalo.material.color.set(state.ok?0x5ce0ae:0xff9e73);
+  }
+  const resize=()=>{const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);};new ResizeObserver(resize).observe(host);
+  const animate=()=>{requestAnimationFrame(animate);renderer.render(scene,camera);};animate();
+  return {scene,camera,renderer,update};
 }
-function updateSky3D(row){if(sky3d)sky3d.update(row);else fallbackVisuals?.updateSky(row)}function updateMoon3D(site){if(moon3d)moon3d.update(site);else fallbackVisuals?.updateMoon(site)}
+function updateSky3D(row){if(sky3d)sky3d.update(row);else fallbackVisuals?.updateSky(row)}function updateMoon3D(site,row){if(moon3d)moon3d.update(site,row);else fallbackVisuals?.updateMoon(site)}
 function createFallbackVisuals(){
   function makeCanvas(host){const c=document.createElement('canvas');c.style.width='100%';c.style.height='100%';c.width=host.clientWidth*devicePixelRatio;c.height=host.clientHeight*devicePixelRatio;host.appendChild(c);return c;}
   const sky=makeCanvas($('skyScene')),moon=makeCanvas($('moonScene'));

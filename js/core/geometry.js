@@ -24,9 +24,11 @@ function surfaceFrame(latDeg,lonDeg,altKm){
   const north=unit(cross(up,east));
   return {site,up,east,north};
 }
-function horizonAt(az){
-  if(!horizonProfile?.length)return 0;
-  const sorted=horizonProfile; const a=wrap360(az);
+// Terrain height (deg) at an azimuth, interpolated from a horizon profile [{az,el}] sorted by az.
+// Defaults to the profile of the active site; pass another profile for other sites (see js/data/terrain.js).
+function horizonAt(az,profile=horizonProfile){
+  if(!profile?.length)return 0;
+  const sorted=profile; const a=wrap360(az);
   let hi=sorted.findIndex(p=>p.az>=a);if(hi<0)hi=0;
   const lo=(hi-1+sorted.length)%sorted.length,p0=sorted[lo],p1=sorted[hi];
   let a0=p0.az,a1=p1.az,aa=a;
@@ -40,8 +42,9 @@ function targetGeometry(position,frame,bodyRadius,site,useTerrain=true){
   const elevation=Math.atan2(up,Math.hypot(n,e))*180/Math.PI;
   const azimuth=wrap360(Math.atan2(e,n)*180/Math.PI);
   const angularRadius=Math.asin(clamp(bodyRadius/Math.max(distance,bodyRadius),-1,1))*180/Math.PI;
-  const sameSite=horizonProfileSite&&Math.abs(site.lat-horizonProfileSite.lat)<1e-5&&Math.abs(site.lon-horizonProfileSite.lon)<1e-5;
-  const h=(useTerrain&&horizonProfile&&sameSite)?horizonAt(azimuth):0;
+  // Each site uses its own horizon profile (LOLA catalog or uploaded CSV); flat horizon if it has none.
+  const profile=useTerrain?profileForSite(site):null;
+  const h=profile?horizonAt(azimuth,profile):0;
   return {elevation,azimuth,distance,angularRadius,horizon:h,centerVisible:elevation>h,limbVisible:elevation+angularRadius>h,fullDiskVisible:elevation-angularRadius>h,clearance:elevation-h,vector:u};
 }
 function panelNormal(tiltDeg,azDeg,frame){

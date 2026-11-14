@@ -200,10 +200,13 @@ class SpiceEngine:
 
         duration_hours = int(duration_hours)
         step_minutes = int(step_minutes)
-        if duration_hours not in (24, 48, 72):
-            raise ValueError("duration_hours must be 24, 48 or 72.")
-        if step_minutes not in (10, 15, 30, 60):
-            raise ValueError("step_minutes must be 10, 15, 30 or 60.")
+        # Any window from 1 hour to one year (the web uses date ranges). Long windows use coarse steps.
+        if not 1 <= duration_hours <= 366 * 24:
+            raise ValueError("duration_hours must be between 1 and 8784 (one year).")
+        if step_minutes not in (10, 15, 30, 60, 180, 360):
+            raise ValueError("step_minutes must be 10, 15, 30, 60, 180 or 360.")
+        if duration_hours * 60 // step_minutes > 20000:
+            raise ValueError("Too many samples: use a larger step_minutes for this window.")
 
         start = self._parse_utc(start_utc)
         total_seconds = duration_hours * 3600
