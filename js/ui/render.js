@@ -10,11 +10,11 @@ function setFlag(id,kind,label){$(id).className=`flag ${kind}`;$(id).textContent
 function renderMetrics(row,summary){
   const sun=row.sun,earth=row.earth;
   $('kpiSun').textContent=`${number(sun.elevation,1)}°`;
-  $('kpiSunSub').textContent=`Az ${number(sun.azimuth,0)}° · ${sun.centerVisible?'center visible':'center below horizon'}`;
+  $('kpiSunSub').textContent=`Azimuth ${number(sun.azimuth,0)}°`;
   $('kpiEarth').textContent=`${number(earth.elevation,1)}°`;
-  $('kpiEarthSub').textContent=`Disk ${earth.limbVisible?'partially / fully visible':'geometrically occulted'}`;
+  $('kpiEarthSub').textContent=`Azimuth ${number(earth.azimuth,0)}°`;
   $('kpiPower').textContent=`${number(row.output,0)} W/m²`;
-  $('kpiPowerSub').textContent=`Incident irradiance ${number(row.irradiance,0)} W/m²`;
+  $('kpiPowerSub').textContent='on the panel';
   $('kpiDelay').textContent=`${number(row.roundTrip,2)} s`;
   $('sunElevation').textContent=`${number(sun.elevation,2)}°`;$('sunAzimuth').textContent=`${number(sun.azimuth,1)}°`;
   $('earthElevation').textContent=`${number(earth.elevation,2)}°`;$('earthAzimuth').textContent=`${number(earth.azimuth,1)}°`;
@@ -53,6 +53,49 @@ function renderTimeline(summary,data){
   $('timeSlider').max=String(data.length-1);$('timeSlider').value=String(currentIndex);
 }
 
+// Survival & contact figures of a run (also used by the comparison, js/ui/comparison.js).
+// A value "touches the window edge" when the period starts or ends at the start/end of the window:
+// it may be longer in reality, so it is shown with "≥".
+const missionStatsCache=new WeakMap();
+const LONG_NIGHT_H=14*24; // orientative: longer nights are hard to survive on batteries
+function missionStats(data,summary){
+  if(missionStatsCache.has(data))return missionStatsCache.get(data);
+  const t0=data[0].sec,t1=data.at(-1).sec,edge=1;
+  let night={h:0,edge:false},prev=t0;
+  const gap=(a,b)=>{if(b-a>night.h*3600)night={h:(b-a)/3600,edge:a<=t0+edge||b>=t1-edge};};
+  for(const it of summary.sunCenterIntervals){if(it.start>prev)gap(prev,it.start);prev=Math.max(prev,it.end);}
+  if(t1>prev)gap(prev,t1);
+  let day={h:0,edge:false};
+  for(const it of summary.sunCenterIntervals){const h=(it.end-it.start)/3600;if(h>day.h)day={h,edge:it.start<=t0+edge||it.end>=t1-edge};}
+  // Longest time without a direct link to Earth (Earth hidden or no DSN station: js/core/comms.js)
+  const dt=data.length>1?(data[1].sec-data[0].sec)/3600:0,settings=commsSettings();
+  let noLink={h:0,edge:false},run=0,runStart=0,both=0;
+  data.forEach((r,i)=>{
+    if(r.sun.centerVisible&&r.earth.limbVisible)both++;
+    if(linkState(r,settings).ok){run=0;return;}
+    if(run===0)runStart=i;
+    run+=i===0?0:dt;
+    if(run>=noLink.h)noLink={h:run,edge:runStart===0||i===data.length-1};
+  });
+  const stats={night,day,noLink,sunEarthH:both/data.length*(t1-t0)/3600,sunEarthPct:both/data.length*100};
+  missionStatsCache.set(data,stats);
+  return stats;
+}
+// Total time: hours and minutes up to 2 days, then days ("91.0 d") so long windows stay readable.
+function fmtTotal(hours){return hours>=48?`${number(hours/24,1)} d`:fmtHours(hours*60);}
+function fmtDuration(v){const s=v.edge?'≥ ':'';return v.h>=48?`${s}${number(v.h/24,1)} d`:`${s}${Math.round(v.h)} h`;}
+
+function renderExtendedStats(summary){
+  if(!$('winNight'))return;
+  const st=missionStats(rows,summary),longNight=st.night.h>LONG_NIGHT_H;
+  for(const id of ['winNight','winNightShort']){$(id).textContent=fmtDuration(st.night);$(id).classList.toggle('is-bad',longNight);}
+  for(const id of ['winNoLink','winNoLinkShort'])$(id).textContent=fmtDuration(st.noLink);
+  $('winNightSub').textContent=longNight?'over 14 days: hard to survive on batteries':'without direct sunlight';
+  $('winSunEarth').textContent=fmtDuration({h:st.sunEarthH,edge:false});
+  $('winSunEarthSub').textContent=`${Math.round(st.sunEarthPct)}% of the window: power and contact`;
+  $('winLongDay').textContent=fmtDuration(st.day);
+}
+
 // "Over the whole window" cards in the right column (built in js/workspace-controller.js).
 function fmtSpan(sec){
   const m=Math.max(0,Math.round(sec/60));
@@ -76,19 +119,20 @@ function renderWindowSummary(row,summary){
   const pct=h=>clamp(h/totalH*100,0,100);
   const sunPct=pct(summary.sunCenter),earthPct=pct(summary.earthLimb);
   $('winRange').textContent=`${isoAt(rows[0].dateMs).slice(0,16)} UTC · ${fmtWindow(currentScenario.hours)}`;
-  $('winSun').textContent=fmtHours(summary.sunCenter*60);
+  $('winSun').textContent=fmtTotal(summary.sunCenter);
   $('winSunPct').textContent=`${Math.round(sunPct)}% of the window`;
   $('winSunBar').style.width=`${sunPct}%`;
   $('winSunNext').textContent=visibilityNow(summary.sunCenterIntervals,row.sec,endSec,row.sun.centerVisible);
-  $('winEarth').textContent=fmtHours(summary.earthLimb*60);
+  $('winEarth').textContent=fmtTotal(summary.earthLimb);
   $('winEarthPct').textContent=`${Math.round(earthPct)}% of the window`;
   $('winEarthBar').style.width=`${earthPct}%`;
   $('winEarthNext').textContent=visibilityNow(summary.earthLimbIntervals,row.sec,endSec,row.earth.limbVisible);
   const site=currentScenario.site,maxPossible=SOLAR_CONSTANT*site.efficiency/100;
   $('winPower').textContent=`${number(summary.maxPower.output,0)} W/m²`;
-  $('winPowerSub').textContent=`panel tilt ${number(site.tilt,0)}° · ${number(site.efficiency,0)}% efficiency`;
+  $('winPowerSub').textContent=`panel tilt ${number(site.tilt,0)}° · ${number(site.efficiency,0)}%`;
   $('winPowerBar').style.width=`${clamp(summary.maxPower.output/maxPossible*100,0,100)}%`;
   $('winPowerNext').textContent=`Now ${number(row.output,0)} W/m²`;
+  renderExtendedStats(summary);
 }
 
 // 2D sky panorama and the status chips of the "At the selected time" tiles.

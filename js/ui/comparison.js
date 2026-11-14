@@ -131,7 +131,10 @@ function updateComparisonCard(record,index){
 function comparisonBest(){
   if(comparison.length<2)return {};
   const best=get=>{const m=Math.max(...comparison.map(get));return m>0?m:null;};
-  return {sun:best(c=>c.summary.sunCenter),earth:best(c=>c.summary.earthLimb),power:best(c=>c.summary.maxPower.output)};
+  // Longest night / without contact: lower is better (★ only if the missions differ).
+  const lowest=get=>{const v=comparison.map(get),m=Math.min(...v);return Math.max(...v)-m>1e-6?m:null;};
+  return {sun:best(c=>c.summary.sunCenter),earth:best(c=>c.summary.earthLimb),power:best(c=>c.summary.maxPower.output),
+    night:lowest(c=>missionStats(c.data,c.summary).night.h),noLink:lowest(c=>missionStats(c.data,c.summary).noLink.h)};
 }
 // Form shown in the first free slot: add a site/date directly, without changing the main scenario.
 function comparisonSlotForm(){
@@ -185,9 +188,56 @@ async function addComparisonFromSlot(form){
   }
   renderComparison();
 }
+// ---- "Compare over time": all missions on the same time axis (hours from each mission's start) ----
+const MISSION_COLORS=['#8adfff','#ff9e73','#c3a6ff','#5ce0ae'];
+let comparisonChartMetric='sun';
+function comparisonTicks(maxH){
+  if(maxH<=72){const step=maxH<=24?6:12;return Array.from({length:Math.floor(maxH/step)+1},(_,i)=>({h:i*step,label:`${i*step} h`}));}
+  const days=maxH/24,step=[1,2,5,7,10,15,30,60,90].find(s=>days/s<=8)||120;
+  return Array.from({length:Math.floor(days/step)+1},(_,i)=>({h:i*step*24,label:`Day ${i*step}`}));
+}
+function comparisonTracksHTML(maxH){
+  const seg=(c,ints,color)=>ints.map(it=>{const l=clamp((it.start-c.data[0].sec)/3600/maxH*100,0,100),r=clamp((it.end-c.data[0].sec)/3600/maxH*100,0,100);return `<i style="left:${l}%;width:${Math.max(.25,r-l)}%;background:${color}"></i>`;}).join('');
+  const rows=comparison.map((c,i)=>`<div class="cc-row"><div class="cc-name"><b style="background:${MISSION_COLORS[i]}"></b><span>M${String(i+1).padStart(2,'0')} · ${escapeHtml(c.site.name)}</span></div>
+    <div class="cc-tracks"><div class="cc-track" title="Sun visible"><span>☀</span><div>${seg(c,c.summary.sunCenterIntervals,'#ffc66d')}</div></div><div class="cc-track" title="Earth in view"><span>◉</span><div>${seg(c,c.summary.earthLimbIntervals,'#6cc4ff')}</div></div></div></div>`).join('');
+  const axis=comparisonTicks(maxH).map((t,k,all)=>`<span style="left:${t.h/maxH*100}%;transform:translateX(${k===0?'0':k===all.length-1&&t.h/maxH>.96?'-100%':'-50%'})">${t.label}</span>`).join('');
+  return `${rows}<div class="cc-axis"><div></div><div class="cc-axis__ticks">${axis}</div></div>`;
+}
+function comparisonLineSVG(metric,maxH){
+  const W=1000,H=270,pl=54,pr=14,pt=14,pb=32;
+  const get={sun:r=>r.sun.elevation,earth:r=>r.earth.elevation,power:r=>r.output}[metric];
+  const all=comparison.flatMap(c=>c.data.map(get));
+  let lo=metric==='power'?0:Math.max(-20,Math.floor(Math.min(...all)-1)),hi=Math.ceil(Math.max(...all)*(metric==='power'?1.1:1)+(metric==='power'?0:1));
+  if(hi<=lo)hi=lo+1;
+  const x=h=>pl+h/maxH*(W-pl-pr),y=v=>pt+(hi-clamp(v,lo,hi))/(hi-lo)*(H-pt-pb);
+  const step=(hi-lo)<=12?2:(hi-lo)<=30?5:(hi-lo)<=90?15:Math.ceil((hi-lo)/6/10)*10;
+  let s='';
+  for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)s+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?'#8fb3d6':'#22344b'}"/><text x="${pl-8}" y="${y(v)+5}" text-anchor="end" class="cc-svg-axis">${v}${metric==='power'?'':'°'}</text>`;
+  comparisonTicks(maxH).forEach((t,k,all)=>{s+=`<text x="${x(t.h)}" y="${H-8}" text-anchor="${k===all.length-1&&t.h/maxH>.96?'end':k===0?'start':'middle'}" class="cc-svg-axis">${t.label}</text>`;});
+  comparison.forEach((c,i)=>{
+    const every=Math.max(1,Math.round(c.data.length/600)),t0=c.data[0].sec;
+    const pts=c.data.filter((_,k)=>k%every===0).map(r=>`${x((r.sec-t0)/3600).toFixed(1)},${y(get(r)).toFixed(1)}`).join(' ');
+    s+=`<polyline points="${pts}" fill="none" stroke="${MISSION_COLORS[i]}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="cc-svg" role="img" aria-label="Comparison chart">${s}</svg>`;
+}
+function renderComparisonCharts(){
+  const host=document.getElementById('compareCharts');
+  if(!host)return;
+  if(!comparison.length){host.hidden=true;host.innerHTML='';return;}
+  host.hidden=false;
+  const maxH=Math.max(...comparison.map(c=>c.hours));
+  const metricBtn=(key,label)=>`<button type="button" data-cc-metric="${key}" aria-pressed="${comparisonChartMetric===key}">${label}</button>`;
+  host.innerHTML=`<div class="cc-head"><h3>Compare over time</h3><span>Time from each mission's start</span></div>
+    <div class="cc-block"><h4>When is there Sun and Earth?</h4>${comparisonTracksHTML(maxH)}</div>
+    <div class="cc-block"><div class="cc-block-head"><h4>Over time</h4><div class="compare-viewmode">${metricBtn('sun','☀ Sun elevation')}${metricBtn('earth','◉ Earth elevation')}${metricBtn('power','⚡ Solar power')}</div></div>
+      ${comparisonLineSVG(comparisonChartMetric,maxH)}
+      <div class="cc-legend">${comparison.map((c,i)=>`<span><b style="background:${MISSION_COLORS[i]}"></b>M${String(i+1).padStart(2,'0')} · ${escapeHtml(c.site.name)}</span>`).join('')}</div></div>`;
+  host.querySelectorAll('[data-cc-metric]').forEach(b=>b.addEventListener('click',()=>{comparisonChartMetric=b.dataset.ccMetric;renderComparisonCharts();}));
+}
 function renderComparison(){
   const count=document.getElementById('compareCount');
-  if(count)count.textContent=`${String(comparison.length).padStart(2,'0')} / 04 MISSIONS STORED`;
+  if(count)count.textContent=`${comparison.length} of 4 missions`;
   const badge=document.getElementById('compareBadge');
   if(badge)badge.textContent=`${comparison.length}/4`;
   disposeComparisonScenes();
@@ -200,26 +250,28 @@ function renderComparison(){
     const kernel=c.meta?.ephemeris_kernel||'synthetic vectors';
     const pct=h=>Math.round(clamp(h/c.hours*100,0,100));
     return `<article class="mission-compare-card" data-compare-card="${c.id}">
-      <div class="mission-compare-card__head"><span class="mission-compare-card__index">M${String(i+1).padStart(2,'0')}</span><div class="mission-compare-card__identity"><strong title="${escapeHtml(c.site.name)}">${escapeHtml(c.site.name)}</strong><small>${escapeHtml(mode)} · ${escapeHtml(kernel)}</small></div><button class="mission-compare-card__remove" type="button" data-remove="${c.id}" aria-label="Remove ${escapeHtml(c.site.name)}">×</button></div>
-      <div class="compare-preview compare-preview--${comparisonViewMode}"><div class="compare-preview__tag">SKY · ${comparisonViewMode==='3d'?'3D':'2D'}</div><div class="compare-preview__quality">${c.mode==='spice'?'SPICE':'DEMO'} · ${c.data.length} SAMPLES</div><div data-compare-preview="${c.id}" class="compare-preview__host"></div><div class="compare-preview__readout" data-compare-readout><span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span></div></div>
+      <div class="mission-compare-card__head"><span class="mission-compare-card__index" style="color:${MISSION_COLORS[i]};border-color:${MISSION_COLORS[i]}">M${String(i+1).padStart(2,'0')}</span><div class="mission-compare-card__identity"><strong title="${escapeHtml(c.site.name)}">${escapeHtml(c.site.name)}</strong><small>${c.mode==='spice'?`SPICE · ${escapeHtml(kernel)}`:'Demo data'}</small></div><button class="mission-compare-card__remove" type="button" data-remove="${c.id}" aria-label="Remove ${escapeHtml(c.site.name)}">×</button></div>
+      <div class="compare-preview compare-preview--${comparisonViewMode}"><div class="compare-preview__tag">SKY · ${comparisonViewMode==='3d'?'3D':'2D'}</div><div data-compare-preview="${c.id}" class="compare-preview__host"></div><div class="compare-preview__readout" data-compare-readout><span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span></div></div>
       <div class="compare-card-scrubber"><input type="range" min="0" max="${c.data.length-1}" value="${idx}" data-compare-slider="${c.id}" aria-label="Select mission time for ${escapeHtml(c.site.name)}"><span data-compare-time>${isoAt(row.dateMs).replace(' UTC','')}</span></div>
       <div class="compare-card-kpis">
-        <div class="compare-card-kpi compare-card-kpi--sun"><span>☀ Sun visible</span><strong>${fmtHours(c.summary.sunCenter*60)}${star(c.summary.sunCenter,best.sun)}</strong><small>${pct(c.summary.sunCenter)}% of the window</small></div>
-        <div class="compare-card-kpi compare-card-kpi--earth"><span>◉ Earth in view</span><strong>${fmtHours(c.summary.earthLimb*60)}${star(c.summary.earthLimb,best.earth)}</strong><small>${pct(c.summary.earthLimb)}% of the window</small></div>
+        <div class="compare-card-kpi compare-card-kpi--sun"><span>☀ Sun visible</span><strong>${fmtTotal(c.summary.sunCenter)}${star(c.summary.sunCenter,best.sun)}</strong><small>${pct(c.summary.sunCenter)}% of the window</small></div>
+        <div class="compare-card-kpi compare-card-kpi--earth"><span>◉ Earth in view</span><strong>${fmtTotal(c.summary.earthLimb)}${star(c.summary.earthLimb,best.earth)}</strong><small>${pct(c.summary.earthLimb)}% of the window</small></div>
         <div class="compare-card-kpi compare-card-kpi--power"><span>⚡ Peak power</span><strong>${number(c.summary.maxPower.output,0)} W/m²${star(c.summary.maxPower.output,best.power)}</strong><small>${number(c.site.efficiency,0)}% panel</small></div>
+        <div class="compare-card-kpi compare-card-kpi--night${missionStats(c.data,c.summary).night.h>LONG_NIGHT_H?' is-bad':''}"><span>🌑 Longest night</span><strong>${fmtDuration(missionStats(c.data,c.summary).night)}${star(missionStats(c.data,c.summary).night.h,best.night)}</strong></div>
+        <div class="compare-card-kpi compare-card-kpi--nolink"><span>📡 Without contact</span><strong>${fmtDuration(missionStats(c.data,c.summary).noLink)}${star(missionStats(c.data,c.summary).noLink.h,best.noLink)}</strong></div>
       </div>
-      <div class="mission-compare-card__meta"><span>${number(c.site.lat,3)}° / ${number(c.site.lon,3)}°</span><span>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</span><span>${fmtWindow(c.hours).toUpperCase()}</span><span>${c.terrainApplied?'HORIZON MASK':'FLAT HORIZON'}</span></div>
+      <div class="mission-compare-card__meta"><span>${number(c.site.lat,3)}° / ${number(c.site.lon,3)}°</span><span>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</span><span>${fmtWindow(c.hours).toUpperCase()}</span><span>${c.terrainApplied?'LOLA TERRAIN':'FLAT HORIZON'}</span></div>
       <div class="mission-compare-card__actions"><button class="btn primary small" type="button" data-details="${c.id}">View telemetry & details ↗</button></div>
     </article>`;
   }).join('');
   const free=4-comparison.length;
-  const slots=free>0?comparisonSlotForm()+Array.from({length:free-1},(_,k)=>`<article class="compare-slot compare-slot--empty"><strong>Slot ${comparison.length+k+2}</strong><span>Free</span></article>`).join(''):'';
+  const slots=free>0?comparisonSlotForm()+Array.from({length:free-1},(_,k)=>`<article class="compare-slot compare-slot--empty"><span>Free slot</span></article>`).join(''):'';
   list.innerHTML=cards+slots;
   if(!comparison.length){
-    body.innerHTML='<tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr>';
+    body.innerHTML='<tr><td colspan="11" class="compare-matrix-empty">No missions saved yet.</td></tr>';
     $('compare').classList.remove('is-detail-open');$('compareMissionDetail').hidden=true;$('compareMissionDetail').innerHTML='';
   }else{
-    body.innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td>${number(c.site.lat,2)}° / ${number(c.site.lon,2)}°</td><td>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')}</td><td>${fmtHours(c.summary.sunCenter*60)} / ${fmtHours(c.summary.sunLimb*60)}</td><td>${fmtHours(c.summary.earthCenter*60)} / ${fmtHours(c.summary.earthLimb*60)}</td><td>${number(c.summary.maxSun.sun.elevation,1)}°</td><td>${number(c.summary.maxEarth.earth.elevation,1)}°</td><td>${number(c.summary.maxPower.output,0)} W/m²</td><td>${c.mode==='spice'?'SPICE':'DEMO'}</td></tr>`).join('');
+    body.innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td>${number(c.site.lat,2)}° / ${number(c.site.lon,2)}°</td><td>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')}</td><td>${fmtHours(c.summary.sunCenter*60)} / ${fmtHours(c.summary.sunLimb*60)}</td><td>${fmtHours(c.summary.earthCenter*60)} / ${fmtHours(c.summary.earthLimb*60)}</td><td>${fmtDuration(missionStats(c.data,c.summary).night)}</td><td>${fmtDuration(missionStats(c.data,c.summary).noLink)}</td><td>${number(c.summary.maxSun.sun.elevation,1)}°</td><td>${number(c.summary.maxEarth.earth.elevation,1)}°</td><td>${number(c.summary.maxPower.output,0)} W/m²</td><td>${c.mode==='spice'?'SPICE':'DEMO'}</td></tr>`).join('');
   }
   list.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{
     const id=Number(b.dataset.remove),entry=comparisonScenes.get(id);entry?.dispose?.();comparisonScenes.delete(id);
@@ -230,6 +282,7 @@ function renderComparison(){
   }));
   list.querySelectorAll('[data-details]').forEach(button=>button.addEventListener('click',()=>openComparisonDetails(Number(button.dataset.details))));
   list.querySelectorAll('[data-slot-form]').forEach(form=>form.querySelector('[data-slot-add]').addEventListener('click',()=>addComparisonFromSlot(form)));
+  renderComparisonCharts();
   if(comparisonViewMode==='2d')comparison.forEach(c=>renderComparisonPreview2D(c,selectedComparisonRow(c).row));
   else if(comparisonViewVisible())requestAnimationFrame(()=>ensureComparisonScenes());
 }
@@ -248,9 +301,9 @@ function drawMissionLineChart(canvas,data,series,range){
   if(!canvas||!data?.length)return;
   const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,1.5),w=Math.max(320,Math.floor(rect.width||canvas.clientWidth||520)),h=Math.max(150,Math.floor(rect.height||190));
   canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
-  const pad={l:43,r:12,t:12,b:27},min=range?.min??Math.min(...series.flatMap(s=>data.map(r=>s.get(r)))) ,max=range?.max??Math.max(...series.flatMap(s=>data.map(r=>s.get(r))));
+  const pad={l:52,r:14,t:12,b:30},min=range?.min??Math.min(...series.flatMap(s=>data.map(r=>s.get(r)))) ,max=range?.max??Math.max(...series.flatMap(s=>data.map(r=>s.get(r))));
   const span=Math.max(1e-6,max-min),x=i=>pad.l+(i/Math.max(1,data.length-1))*(w-pad.l-pad.r),y=v=>pad.t+(1-(v-min)/span)*(h-pad.t-pad.b);
-  ctx.font='8px "IBM Plex Mono",monospace';ctx.textAlign='right';ctx.textBaseline='middle';
+  ctx.font='12px "IBM Plex Mono",monospace';ctx.textAlign='right';ctx.textBaseline='middle';
   for(let k=0;k<=4;k++){const value=min+span*k/4,yy=y(value);ctx.strokeStyle='rgba(134,174,213,.16)';ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();ctx.fillStyle='#7f97b4';ctx.fillText(value.toFixed(range?.digits??1),pad.l-6,yy);}
   ctx.textAlign='center';ctx.textBaseline='top';for(let k=0;k<=4;k++){const idx=Math.round((data.length-1)*k/4);const elapsed=(data[idx].sec-data[0].sec)/3600;ctx.fillStyle='#718aa8';ctx.fillText(`${elapsed.toFixed(0)}h`,x(idx),h-pad.b+7);}
   for(const s of series){ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();data.forEach((r,i)=>{const px=x(i),py=y(s.get(r));if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.stroke();}
@@ -260,8 +313,8 @@ function openComparisonDetails(id){
   const root=$('compareMissionDetail'),main=$('compareMain');const {idx,row}=selectedComparisonRow(c);
   const stepMin=c.stepSeconds/60,source=c.meta?.ephemeris_kernel||'Synthetic / demo';
   const visibleLabel=c.mode==='spice'?'SPICE EPHEMERIS':'SYNTHETIC DEMO DATA';
-  root.hidden=false;$('compare').classList.add('is-detail-open');
-  root.innerHTML=`<div class="compare-detail__top"><div class="compare-detail__identity"><small>MISSION DETAIL / ${visibleLabel}</small><h4>${escapeHtml(c.site.name)}</h4><p>${number(c.site.lat,4)}° latitude · ${number(c.site.lon,4)}° longitude · ${c.hours} h mission window · ${new Date(c.startMs).toISOString().replace('T',' ').slice(0,16)} UTC</p></div><div class="compare-detail__top-actions"><button type="button" class="btn small ghost" data-detail-export="json">Export mission JSON</button><button type="button" class="btn small ghost" data-detail-export="csv">Export telemetry CSV</button><button type="button" class="btn small primary" id="backToComparison">← All missions</button></div></div>
+  root.hidden=false; // details open below the cards; the cards stay visible
+  root.innerHTML=`<div class="compare-detail__top"><div class="compare-detail__identity"><small>MISSION DETAIL / ${visibleLabel}</small><h4>${escapeHtml(c.site.name)}</h4><p>${number(c.site.lat,4)}° latitude · ${number(c.site.lon,4)}° longitude · ${c.hours} h mission window · ${new Date(c.startMs).toISOString().replace('T',' ').slice(0,16)} UTC</p></div><div class="compare-detail__top-actions"><button type="button" class="btn small ghost" data-detail-export="json">Export mission JSON</button><button type="button" class="btn small ghost" data-detail-export="csv">Export telemetry CSV</button><button type="button" class="btn small primary" id="backToComparison">✕ Close details</button></div></div>
     <div class="compare-detail-slider"><strong>TIME</strong><input id="detailMissionSlider" type="range" min="0" max="${c.data.length-1}" value="${idx}"><span id="detailMissionTime">${isoAt(row.dateMs)}</span></div>
     <div class="compare-detail__grid">
       <section class="compare-detail-card"><h5>01 / Mission configuration</h5><div class="compare-detail-fields">
@@ -287,6 +340,7 @@ function openComparisonDetails(id){
     <div class="compare-telemetry-wrap"><table class="compare-telemetry-table"><thead><tr><th>#</th><th>UTC</th><th>Sun el.</th><th>Sun az.</th><th>Earth el.</th><th>Earth az.</th><th>Earth range km</th><th>Irradiance W/m²</th><th>Array W/m²</th><th>RTT s</th></tr></thead><tbody>${c.data.map((r,i)=>`<tr><td>${i+1}</td><td>${new Date(r.dateMs).toISOString().replace('T',' ').slice(0,19)}</td><td>${number(r.sun.elevation,3)}°</td><td>${number(r.sun.azimuth,3)}°</td><td>${number(r.earth.elevation,3)}°</td><td>${number(r.earth.azimuth,3)}°</td><td>${number(r.earth.distance,2)}</td><td>${number(r.irradiance,2)}</td><td>${number(r.output,2)}</td><td>${number(r.roundTrip,3)}</td></tr>`).join('')}</tbody></table></div>
     <div class="status-note warn" style="margin-top:12px">Scientific note: geometric visibility uses the stored horizon mask (or a flat horizon if none was applied). Array output is a simplified irradiance × efficiency estimate. Earth visibility is not an RF link budget.</div>`;
   root.querySelector('#backToComparison').addEventListener('click',()=>{root.hidden=true;$('compare').classList.remove('is-detail-open');});
+  requestAnimationFrame(()=>root.scrollIntoView({behavior:'smooth',block:'start'}));
   root.querySelectorAll('[data-detail-export]').forEach(b=>b.addEventListener('click',()=>exportComparisonMission(c,b.dataset.detailExport)));
   const slider=root.querySelector('#detailMissionSlider');
   slider.addEventListener('input',()=>{
@@ -334,3 +388,32 @@ function renderCandidates(list){if(!list.length){$('searchResults').innerHTML='<
 // Re-render when the comparison opens (the slot form picks up the current date/window) and build the 3D previews.
 document.querySelectorAll('[data-open-view=\"comparison\"]').forEach(b=>b.addEventListener('click',()=>requestAnimationFrame(()=>requestAnimationFrame(renderComparison))));
 window.addEventListener('resize',()=>{if(comparisonViewVisible())requestAnimationFrame(ensureComparisonScenes);});
+
+
+// ▶ Play: moves every mission at once, on a shared clock measured from each mission's own start,
+// updating sliders and 3D/2D previews. Stops when the comparison view is closed.
+let comparePlayTimer=null,comparePlayHours=0;
+function stopComparePlay(){
+  clearInterval(comparePlayTimer);comparePlayTimer=null;
+  const b=document.getElementById('comparePlay');if(b){b.textContent='▶ Play';b.setAttribute('aria-pressed','false');}
+}
+function comparePlayTick(){
+  if(!comparison.length||!comparisonViewVisible()){stopComparePlay();return;}
+  const maxH=Math.max(...comparison.map(c=>c.hours));
+  comparePlayHours+=maxH/300; // about 25 s for the whole window
+  if(comparePlayHours>maxH)comparePlayHours=0;
+  for(const c of comparison){
+    const idx=clamp(Math.round(comparePlayHours*3600/Math.max(1,c.stepSeconds)),0,c.data.length-1);
+    updateComparisonCard(c,idx);
+    const slider=document.querySelector(`[data-compare-slider="${c.id}"]`);if(slider)slider.value=String(idx);
+  }
+}
+document.getElementById('comparePlay')?.addEventListener('click',()=>{
+  if(comparePlayTimer){stopComparePlay();return;}
+  if(!comparison.length)return;
+  // continue from the first mission's current position
+  const c=comparison[0],idx=comparisonIndices.get(c.id)??0;
+  comparePlayHours=idx*c.stepSeconds/3600;
+  const b=document.getElementById('comparePlay');b.textContent='Ⅱ Pause';b.setAttribute('aria-pressed','true');
+  comparePlayTimer=setInterval(comparePlayTick,80);
+});

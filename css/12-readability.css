@@ -1,0 +1,29 @@
+/* Readability floor: no text below ~12-13px. Earlier style layers (02-09) used 6-10px labels in the views
+   (telemetry, site search, limitations, mission detail). Loaded last so it wins; large figures keep their size. */
+
+/* Main page */
+.top-actions .btn.small{font-size:13px}
+.brand p,.brand-content p{font-size:11px!important;letter-spacing:.14em}
+.footer{font-size:12px!important;letter-spacing:.02em}
+.nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:12px}
+
+/* Every focused view (telemetry, comparison, site search, limitations) */
+.nova-view-scroll :is(p,li,label,td,th,small,.sub-reading,.inline-note,.status-note,.field-note,.chart-legend span,
+  .metric-line span,.metric-line b,.flag,.btn,.compare-detail-field span,.compare-interval-card span,.candidate p,
+  .candidate-values span,.compare-detail-slider span,.compare-telemetry-table td,.compare-telemetry-table th){
+  font-size:13px!important;letter-spacing:.01em
+}
+.nova-view-scroll :is(.panel-head h3,h4,h5,.compare-detail-section-title strong,.compare-interval-card strong,
+  .tech-item strong,.candidate strong,.metric-title strong,.compare-detail-slider strong){
+  font-size:15px!important;letter-spacing:.01em
+}
+.nova-view-scroll :is(.panel-head small,.compare-detail-section-title span,.compare-detail__identity small){font-size:12px!important;letter-spacing:.04em}
+.nova-view-scroll :is(.compare-detail-field strong,.sun,.earth,.power,.sub-reading b){font-size:14px!important}
+.nova-view-scroll .compare-detail__identity h4{font-size:22px!important}
+
+/* Comparison cards */
+#compare .mission-compare-card__index{font-size:12px}
+#compare .mission-compare-card__identity small,#compare .compare-preview__tag,#compare .mission-compare-card__meta span{font-size:12px}
+
+/* Link to Earth: the coordinates tag covered the Earth; they are already shown in the Scenario card */
+#moonStatus{display:none}

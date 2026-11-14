@@ -30,7 +30,8 @@ No abrir `index.html` con doble clic (`file://`): el navegador no carga bien los
 | `js/intro.js` | Pantalla de introducción |
 | `css/01-…` a `css/09-…` | Estilos, en el mismo orden en que estaban en el `index.html` original |
 | `css/10-data-panel.css` | Columna derecha de datos (escenario, resumen, vista 2D, lecturas, herramientas) |
-| `css/11-compare.css` | Comparador a pantalla completa |
+| `css/11-compare.css` | Comparador a pantalla completa y gráficas «Compare over time» |
+| `css/12-readability.css` | Letra mínima legible (~12-13 px) en todas las ventanas; va el último |
 
 ## Terreno LOLA: cómo añadir un sitio
 

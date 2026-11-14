@@ -44,6 +44,7 @@
 <link rel="stylesheet" href="css/09-comparison-studio.css">
 <link rel="stylesheet" href="css/10-data-panel.css">
 <link rel="stylesheet" href="css/11-compare.css">
+<link rel="stylesheet" href="css/12-readability.css">
 
 </head>
 <body>
@@ -99,7 +100,7 @@
         <p>LUNAR SOUTH POLE <i>·</i> MISSION INTELLIGENCE</p>
       </div>
     </div>
-    <div class="top-actions"><span id="dataBadge" class="status-pill"><i class="dot"></i><span id="dataBadgeText">DEMO MODE · SYNTHETIC DATA</span></span><span class="chip">UTC · IAU_MOON</span><button class="btn small ghost" id="exportJson">Export mission report ↗</button></div>
+    <div class="top-actions"><button type="button" id="spiceConnect" class="spice-toggle is-checking" role="switch" aria-checked="false" aria-label="Use real SPICE data"><span class="spice-toggle__side spice-toggle__side--demo">Demo</span><span class="spice-switch" aria-hidden="true"><i></i></span><span class="spice-toggle__side spice-toggle__side--real">Real · SPICE</span><span class="spice-toggle__hint"></span></button><span id="dataBadge" class="status-pill" hidden><i class="dot"></i><span id="dataBadgeText">DEMO MODE · SYNTHETIC DATA</span></span><button class="btn small ghost" id="exportJson">Export mission report ↗</button></div>
   </header>
 
   <nav class="mission-nav" aria-label="LUNARA navigation">
@@ -146,10 +147,10 @@
         </select></div>
         <div class="field"><label for="siteName">Scenario name</label><input id="siteName" value="Shackleton region" maxlength="50"></div>
         <div class="field-row">
-          <div class="field"><label for="lat">Planetocentric latitude (°)</label><input id="lat" type="number" min="-90" max="90" step="0.001" value="-89.5"></div>
-          <div class="field"><label for="lon">Longitude (°)</label><input id="lon" type="number" min="-180" max="180" step="0.001" value="0"></div>
+          <div class="field"><label for="lat">Latitude (°)</label><input id="lat" type="number" min="-90" max="90" step="0.001" value="-89.5"></div>
+          <div class="field"><label for="lon">Longitude (°E)</label><input id="lon" type="number" min="-180" max="180" step="0.001" value="0"></div>
         </div>
-        <div class="field"><label for="alt">Altitude above ellipsoid (km)</label><input id="alt" type="number" min="-5" max="15" step="0.001" value="0"></div>
+        <div class="field"><label for="alt">Altitude (km)</label><input id="alt" type="number" min="-5" max="15" step="0.001" value="0"></div>
         <div class="field-note">Planetocentric latitude · east-positive longitude. Presets are reference starting points.</div>
         </div></details>
 
@@ -174,9 +175,9 @@
 
         <details class="control-group"><summary><span><i>04</i> Data & terrain</span><b>＋</b></summary><div class="control-group__body">
         <div class="spice-bridge" id="spiceBridge">
-          <div class="spice-bridge__eyebrow">LIVE EPHEMERIS / LOCAL PYTHON</div>
-          <div class="spice-bridge__copy">Connect this page to your local SPICE engine and calculate real Sun/Earth positions for the selected UTC window.</div>
-          <button class="btn primary full" id="spiceConnect" type="button">↗ Generate real data with SPICE</button>
+          
+          <div class="spice-bridge__copy">Real Sun and Earth positions from the local SPICE server. Switch with the data button in the top bar.</div>
+          
           <div id="spiceServiceStatus" class="status-note warn" aria-live="polite">Checking local SPICE service…</div>
         </div>
         <div class="field"><label class="file-label btn ghost full">⇧ Load positions.json (SPICE)<input id="dataFile" type="file" accept=".json,application/json"></label></div>
@@ -198,8 +199,8 @@
         <div class="visual-side-note"><span class="visual-side-mark">3D</span><span>INTERACTIVE<br>MISSION VIEWS</span></div>
       </div>
       <div class="visual-grid" id="visuals">
-        <section class="panel"><div class="panel-head"><h3>Local sky · 3D</h3><small>AZIMUTH · ELEVATION</small></div><div class="scene-wrap" id="skyScene"><div class="scene-label">View from the mission site</div><div class="scene-status" id="skyStatus">Awaiting analysis</div><div class="scene-help">Drag to rotate · scroll to zoom</div></div><div class="legend"><span><i style="background:#ffc66d"></i> Sun</span><span><i style="background:#55b9ff"></i> Earth</span><span><i style="background:#5ce0ae"></i> visible horizon</span><span><i style="background:#8293aa"></i> schematic terrain</span></div></section>
-        <section class="panel"><div class="panel-head"><h3>Link to Earth · 3D</h3><small>DSN · DIRECT-TO-EARTH</small></div><div class="scene-wrap" id="moonScene"><div class="scene-label">Moon · Earth · DSN</div><div class="scene-status" id="moonStatus">—</div><div class="scene-help">Drag to orbit · scroll to zoom</div><div class="comms-hud" id="commsHud" aria-live="polite"><div class="comms-hud__row"><span class="comms-hud__state" id="commsState">—</span><span class="comms-hud__detail" id="commsDetail">—</span></div><div class="comms-hud__row"><span class="comms-hud__stations" id="commsStations"></span><span class="comms-hud__window" id="commsWindow">—</span></div></div></div><div class="legend"><span><i style="background:#ff9e73"></i> landing site</span><span><i style="background:#5ce0ae"></i> link</span><span><i style="background:#ff7d89"></i> no link</span><span class="inline-note">Not to scale · sizes and distance are schematic.</span></div></section>
+        <section class="panel"><div class="panel-head"><h3>Local sky · 3D</h3><small>AZIMUTH · ELEVATION</small></div><div class="scene-wrap" id="skyScene"><div class="scene-label">Local sky</div><div class="scene-status" id="skyStatus">Awaiting analysis</div><div class="scene-help">Drag to rotate · scroll to zoom</div></div></section>
+        <section class="panel"><div class="panel-head"><h3>Link to Earth · 3D</h3><small>DSN · DIRECT-TO-EARTH</small></div><div class="scene-wrap" id="moonScene"><div class="scene-label">Link to Earth</div><div class="scene-status" id="moonStatus">—</div><div class="scene-help">Drag to orbit · not to scale</div><div class="comms-hud" id="commsHud" aria-live="polite"><div class="comms-hud__row"><span class="comms-hud__state" id="commsState">—</span><span class="comms-hud__detail" id="commsDetail">—</span></div><div class="comms-hud__row"><span class="comms-hud__stations" id="commsStations"></span><span class="comms-hud__window" id="commsWindow">—</span></div></div></div></section>
       </div>
 
       <div class="kpis">
@@ -231,18 +232,20 @@
   <div class="panel-head"><h3>Mission comparison studio</h3><small>UP TO 4 MISSIONS · INDIVIDUAL 3D VIEWS</small></div>
   <div class="panel-body compare-main" id="compareMain">
     <div class="compare-toolbar">
-      <div><strong id="compareCount">00 / 04 MISSIONS STORED</strong><small>Save each analysed site/date as an independent mission snapshot.</small></div>
+      <div><strong id="compareCount">0 of 4 missions</strong></div>
       <div class="btn-row compare-toolbar-actions">
         <div class="compare-viewmode" role="group" aria-label="Preview type"><button type="button" data-compare-mode="3d" aria-pressed="true">3D</button><button type="button" data-compare-mode="2d" aria-pressed="false">2D</button></div>
+        <button id="comparePlay" class="btn small ghost" type="button" aria-pressed="false">▶ Play</button>
         <button id="compareAddCurrent" class="btn primary small" type="button">＋ Add current scenario</button>
         <button id="clearCompare" class="btn small ghost" type="button">Clear all</button>
         <button id="exportCompare" class="btn small ghost" type="button">Export CSV</button>
       </div>
     </div>
     <div id="compareList" class="compare-cards-grid"><div class="compare-empty compare-empty--studio"><strong>Your comparison board is empty.</strong><span>Analyse a mission, then choose “Add to comparison”. You can keep up to four independent mission runs here.</span></div></div>
+    <section class="compare-charts" id="compareCharts" hidden></section>
     <div class="compare-matrix-wrap">
-      <div class="compare-matrix-title"><strong>MISSION COMPARISON MATRIX</strong><span>WINDOW TOTALS / PEAK VALUES</span></div>
-      <div class="table-wrap"><table class="data-table compare-matrix"><thead><tr><th>Mission</th><th>Site</th><th>Start · UTC</th><th>Sun center / disk</th><th>Earth center / disk</th><th>Peak Sun</th><th>Peak Earth</th><th>Peak array</th><th>Data</th></tr></thead><tbody id="compareTable"><tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr></tbody></table></div>
+      <div class="compare-matrix-title"><strong>Summary</strong></div>
+      <div class="table-wrap"><table class="data-table compare-matrix"><thead><tr><th>Mission</th><th>Site</th><th>Start · UTC</th><th>Sun center / disk</th><th>Earth center / disk</th><th>Longest night</th><th>Without contact</th><th>Peak Sun</th><th>Peak Earth</th><th>Peak array</th><th>Data</th></tr></thead><tbody id="compareTable"><tr><td colspan="11" class="compare-matrix-empty">No missions saved yet.</td></tr></tbody></table></div>
     </div>
   </div>
   <div id="compareMissionDetail" class="compare-detail" hidden></div>

@@ -61,3 +61,33 @@
 #compare .compare-matrix-title span{font-size:12px}
 #compare .compare-matrix th{font-size:12px}
 #compare .compare-matrix td{font-size:13px}
+
+/* "Compare over time" (js/ui/comparison.js renderComparisonCharts): all missions on one time axis */
+.compare-charts{display:flex;flex-direction:column;gap:14px;margin:18px 0 6px;padding:18px 20px;border:1px solid rgba(136,187,230,.18);border-radius:16px;background:linear-gradient(145deg,rgba(17,31,53,.85),rgba(7,14,27,.9))}
+.cc-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.cc-head h3{margin:0;font:700 18px "Sora","Space Grotesk",sans-serif;color:#eef6ff}
+.cc-head span{font-size:13px;color:#93abc7}
+.cc-block{display:flex;flex-direction:column;gap:8px}
+.cc-block h4{margin:0;font:700 15px "Sora","Space Grotesk",sans-serif;color:#dfeaf7}
+.cc-block-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.cc-row,.cc-axis{display:grid;grid-template-columns:minmax(150px,240px) minmax(0,1fr);gap:12px;align-items:center}
+.cc-name{display:flex;align-items:center;gap:8px;min-width:0;font:600 14px "Space Grotesk",sans-serif;color:#eef6ff}
+.cc-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-name b,.cc-legend b{flex:none;width:12px;height:12px;border-radius:3px}
+.cc-tracks{display:flex;flex-direction:column;gap:4px}
+.cc-track{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:6px;font-size:13px;color:#a9c0d8}
+.cc-track>div{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden}
+.cc-track i{position:absolute;top:0;bottom:0;border-radius:99px}
+.cc-axis__ticks{position:relative;height:18px;margin-left:24px}
+.cc-axis__ticks span{position:absolute;transform:translateX(-50%);font:500 12px "IBM Plex Mono",monospace;color:#8ea6c2;white-space:nowrap}
+.cc-svg{display:block;width:100%;height:auto}
+.cc-svg-axis{fill:#8ea6c2;font:13px "IBM Plex Mono",monospace}
+.cc-legend{display:flex;flex-wrap:wrap;gap:6px 18px;font:600 13px "Space Grotesk",sans-serif;color:#dfeaf7}
+.cc-legend span{display:inline-flex;align-items:center;gap:7px}
+.compare-charts .compare-viewmode button{font-size:13px;padding:6px 12px}
+#compareMissionDetail{margin-top:18px;border-radius:16px;scroll-margin-top:12px}
+@media (max-width:760px){.cc-row,.cc-axis{grid-template-columns:1fr}.cc-axis>div:first-child{display:none}.cc-axis__ticks{margin-left:24px}}
+
+/* Survival rows in the cards: red when the longest night exceeds 14 days */
+#compare .compare-card-kpi--night strong,#compare .compare-card-kpi--nolink strong{color:#eef6ff}
+#compare .compare-card-kpi--night.is-bad strong{color:#ff8f9a}

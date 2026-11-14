@@ -8,7 +8,31 @@
 // The backend returns the same t_utc_s + Sun/Earth vector format consumed by
 // normalizeDataset(); the existing geometry, calculations and renderers remain
 // the source of truth on the client.
+// Header data button (#spiceConnect): shows the data in use and switches between demo and real SPICE data.
+let spiceService = 'checking'; // 'checking' | 'ready' | 'offline'
+function updateSpiceButton(state){
+  const button = $('spiceConnect');
+  if (!button) return;
+  const real = dataMode === 'spice', s = state || (real ? 'connected' : spiceService);
+  const info = { // [small hint next to the switch, tooltip]
+    connected: ['', 'Using real SPICE positions. Click to switch back to demo data.'],
+    connecting: ['connecting…', 'Calculating real positions with SPICE…'],
+    ready: ['', 'Demo data. Click to use real Sun and Earth positions from SPICE.'],
+    checking: ['checking…', 'Looking for the local SPICE server…'],
+    offline: ['offline ↻', 'Local SPICE server not found: start start_lunara_spice.bat and open http://127.0.0.1:8765/. Click to check again.']
+  }[s];
+  button.className = `spice-toggle is-${s}`;
+  button.setAttribute('aria-checked', String(real || s === 'connecting'));
+  button.querySelector('.spice-toggle__hint').textContent = info[0];
+  button.title = info[1];
+  button.disabled = s === 'connecting' || s === 'checking';
+}
+
 async function refreshLocalSpiceStatus(){
+  spiceService = 'checking'; updateSpiceButton();
+  try { await refreshLocalSpiceStatusDetail(); } finally { updateSpiceButton(); }
+}
+async function refreshLocalSpiceStatusDetail(){
   const statusEl = $('spiceServiceStatus');
   if (!statusEl) return;
   try {
@@ -19,20 +43,22 @@ async function refreshLocalSpiceStatus(){
       const names = (status.kernels || []).map(k => k.name).join(' · ');
       statusEl.textContent = `SPICE READY · ${status.frame} · ${names || 'kernels loaded'}`;
       statusEl.className = 'status-note good';
+      spiceService = 'ready';
     } else {
+      spiceService = 'offline';
       statusEl.textContent = `SPICE service found, but not ready: ${status.error || status.message || 'check kernels and SpiceyPy'}`;
       statusEl.className = 'status-note warn';
     }
   } catch (error) {
     statusEl.textContent = 'Local SPICE service not detected. Start start_lunara_spice.bat and open LUNARA at http://127.0.0.1:8765/. Do not open the HTML as file://.';
     statusEl.className = 'status-note warn';
+    spiceService = 'offline';
   }
 }
 
 async function connectLocalSpice(){
   const button = $('spiceConnect');
   const statusEl = $('spiceServiceStatus');
-  const originalLabel = button.textContent;
   const dateValue = $('date').value;
   const durationHours = Number($('duration').value);
   const stepMinutes = Number($('sampleStep').value);
@@ -45,8 +71,7 @@ async function connectLocalSpice(){
     duration_hours: String(durationHours),
     step_minutes: String(stepMinutes)
   });
-  button.disabled = true;
-  button.textContent = '⟳ Computing SPICE vectors…';
+  updateSpiceButton('connecting');
   if (statusEl) {
     statusEl.textContent = 'Calculating Sun and Earth positions with the loaded SPICE kernels…';
     statusEl.className = 'status-note warn';
@@ -91,11 +116,15 @@ async function connectLocalSpice(){
     }
     showNotice(`Could not generate SPICE ephemeris: ${error.message}. Check the local Python server and kernel coverage.`, 'warn');
   } finally {
-    button.disabled = false;
-    button.textContent = originalLabel;
+    updateSpiceButton();
   }
 }
 
-$('spiceConnect')?.addEventListener('click', connectLocalSpice);
+// Real data -> back to demo; demo + server ready -> connect; server offline -> check again.
+$('spiceConnect')?.addEventListener('click', () => {
+  if (dataMode === 'spice') $('resetDemo').click();
+  else if (spiceService === 'ready') connectLocalSpice();
+  else refreshLocalSpiceStatus();
+});
 
 refreshLocalSpiceStatus();
