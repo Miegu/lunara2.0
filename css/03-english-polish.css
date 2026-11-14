@@ -1,0 +1,43 @@
+/* Typography polish */
+:root {
+  --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-display: "Sora", "Space Grotesk", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-brand: "Orbitron", "Sora", sans-serif;
+}
+body, button, input, select { font-family: var(--font-ui); }
+body { letter-spacing: .008em; }
+h1, h2, h3, .hero h2, .panel-head h3 { font-family: var(--font-display); }
+.lunara-logo { font-family: var(--font-brand); font-weight: 700; letter-spacing: .19em; font-size: clamp(25px,2.1vw,34px); }
+.brand { gap: 13px; }
+.brand:before, .brand:after { display:none !important; content:none !important; }
+.lunara-emblem { width:56px; height:56px; flex:0 0 56px; overflow:visible; filter:drop-shadow(0 0 15px rgba(180,145,255,.24)); }
+.emblem-orbit { transform-box:fill-box; transform-origin:center; }
+.emblem-orbit-a { animation:lunara-orbit 22s linear infinite; }
+.emblem-orbit-b { animation:lunara-orbit 30s linear infinite reverse; opacity:.7; }
+@keyframes lunara-orbit { to { transform:rotate(360deg); } }
+.brand-mark { color:#9fddff; font-size:.62em; letter-spacing:.04em; vertical-align:top; opacity:.82; }
+.brand p { font-family:var(--font-mono); font-size:8px; letter-spacing:.13em; }
+.brand p i { color:#9ddfff; font-style:normal; }
+.mission-nav a { font-family:var(--font-mono); font-size:9px; letter-spacing:.035em; text-transform:uppercase; }
+.eyebrow { font-family:var(--font-mono); }
+.hero { position:relative; isolation:isolate; overflow:hidden; }
+.hero-copy { max-width:850px; }
+.hero h2 { max-width:850px; font-size:clamp(30px,4vw,52px); letter-spacing:-.055em; line-height:1.03; }
+.hero h2 em { color:#c8aaff; font-style:normal; text-shadow:0 0 26px rgba(183,143,255,.2); }
+.hero p { max-width:750px; font-size:14px; }
+.hero-tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.hero-tags span { display:inline-flex; align-items:center; gap:7px; padding:7px 10px; border:1px solid rgba(201,174,255,.18); border-radius:999px; background:rgba(10,7,19,.34); color:#d7cae8; font:8px var(--font-mono); letter-spacing:.08em; }
+.hero-tags i { width:5px; height:5px; border-radius:50%; background:#a9e8ff; box-shadow:0 0 9px #9edfff; }
+.hero-stat strong { font-family:var(--font-display); }
+.hero-stat span { font-family:var(--font-mono); }
+.kpi .label, .panel-head small, .section-kicker, .metric-title strong, .track-name, .flag, .tag { font-family:var(--font-mono); }
+.kpi strong, .big-reading, .time-label, .data-table td.num { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+.field label { font-family:var(--font-ui); }
+.btn { font-family:var(--font-ui); }
+.scene-label, .scene-status, .scene-help { font-family:var(--font-mono); }
+.tech-item strong { font-family:var(--font-display); }
+.tech-item p { font-family:var(--font-ui); }
+.footer { font-family:var(--font-mono); }
+@media (max-width:850px) { .hero-tags { margin-top:15px; } .lunara-emblem { width:50px; height:50px; flex-basis:50px; } }
+@media (prefers-reduced-motion:reduce) { .emblem-orbit-a,.emblem-orbit-b { animation:none; } }

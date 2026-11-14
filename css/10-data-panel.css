@@ -1,0 +1,70 @@
+/* Right data column (built in js/workspace-controller.js): scenario controls, window results,
+   timeline and instant readings visible without opening any view. Minimum text size ~13px.
+   Also enlarges the tiny labels of the 3D views on the left. Loaded last, so it wins over earlier files. */
+.nova-data{--d-sun:#ffc66d;--d-earth:#6cc4ff;--d-power:#5ce0ae;--d-text:#eef6ff;--d-muted:#93abc7;gap:18px;padding-top:4px}
+
+/* Cards */
+.nova-card{padding:18px 20px;border:1px solid rgba(136,187,230,.18);border-radius:16px;background:linear-gradient(145deg,rgba(17,31,53,.9),rgba(7,14,27,.92));box-shadow:0 12px 30px rgba(0,0,0,.18)}
+.nova-card-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px 14px;margin-bottom:14px}
+.nova-card-head h2{margin:0;font:700 18px/1.2 "Sora","Space Grotesk",sans-serif;letter-spacing:-.02em;color:var(--d-text)}
+.nova-card-note{font-size:13px;color:var(--d-muted)}
+.nova-link{background:none;border:0;padding:4px 0;color:#8adfff;font:600 14px "Space Grotesk",sans-serif;cursor:pointer}
+.nova-link:hover{text-decoration:underline}
+.nova-link:focus-visible{outline:2px solid #8bdfff;outline-offset:3px;border-radius:4px}
+
+/* 1. Scenario */
+.nova-scenario-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1.1fr) minmax(0,.8fr);gap:12px}
+.nova-scenario .field{margin:0;min-width:0}
+.nova-scenario .field label{font:600 13px "Space Grotesk",sans-serif;color:var(--d-muted);letter-spacing:0;text-transform:none}
+.nova-scenario .field select,.nova-scenario .field input{font:600 15px "Space Grotesk",sans-serif;padding:11px 12px;border-radius:10px;min-height:46px}
+.nova-scenario-meta{margin-top:10px}
+.nova-scenario-meta .nova-coordinate-tag{font:500 13px "IBM Plex Mono",monospace;color:var(--d-muted)}
+
+/* 2. Results over the window */
+.nova-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.nova-stat{--c:var(--d-sun);display:flex;flex-direction:column;gap:6px;min-width:0;padding:14px 15px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(136,187,230,.12);border-top:3px solid var(--c)}
+.nova-stat--earth{--c:var(--d-earth)}.nova-stat--power{--c:var(--d-power)}
+.nova-stat-label{font:600 14px "Space Grotesk",sans-serif;color:var(--d-text)}
+.nova-stat strong{font:700 clamp(24px,2.4vw,34px)/1.1 "Sora","Space Grotesk",sans-serif;color:var(--c);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.nova-stat-sub{font-size:13px;color:var(--d-muted)}
+.nova-meter{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.nova-meter i{display:block;height:100%;width:0;border-radius:99px;background:var(--c);transition:width .4s ease}
+.nova-stat-next{font-size:14px;color:#dbe8f7}
+
+/* 3. Timeline + scrubber */
+.nova-card.nova-time-card{padding:18px 20px}
+.nova-time-card .timeline{padding:0 0 4px}
+.nova-time-card .track{grid-template-columns:84px minmax(0,1fr);gap:12px;margin:10px 0}
+.nova-time-card .track-name{font:600 14px "Space Grotesk",sans-serif;letter-spacing:0;text-transform:none;color:var(--d-text)}
+.nova-time-card .track-bar{height:22px;border-radius:7px}
+.nova-time-card .time-control{margin-top:8px;padding:12px 0 0;border-top:1px solid rgba(136,187,230,.12)}
+.nova-time-card .time-label{font:500 13px "IBM Plex Mono",monospace;color:#c9d9ea}
+.nova-time-card .btn{font-size:14px;padding:9px 14px}
+
+/* 4. Instant readings */
+.nova-data .nova-section-label strong{font:700 16px "Sora","Space Grotesk",sans-serif;letter-spacing:-.01em;text-transform:none;color:var(--d-text)}
+.nova-data .kpi .label{font:600 12px "Space Grotesk",sans-serif;letter-spacing:.02em;text-transform:none}
+.nova-data .kpi small{font-size:12px;color:var(--d-muted)}
+
+/* 5. More tools */
+.nova-data .nova-workspace-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.nova-data .nova-launcher strong{font-size:15px}
+.nova-data .nova-launcher small{font:13px "Space Grotesk",sans-serif;letter-spacing:0;color:var(--d-muted)}
+
+/* Left column: make the labels of the 3D views readable */
+.nova-observatory .visual-grid .panel-head h3{font-size:12px}
+.nova-observatory .visual-grid .panel-head small{font-size:11px}
+.nova-observatory .legend{font-size:12px}
+.nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:11px}
+.nova-overline,.nova-stage-tag{font-size:11px}
+
+@media (max-width:1100px){
+  .nova-summary-grid{grid-template-columns:1fr}
+  .nova-stat{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;column-gap:12px}
+  .nova-stat .nova-meter,.nova-stat-next,.nova-stat-sub{grid-column:1/-1}
+}
+@media (max-width:700px){
+  .nova-scenario-grid{grid-template-columns:1fr}
+  .nova-card,.nova-card.nova-time-card{padding:15px}
+}
+@media (prefers-reduced-motion:reduce){.nova-meter i{transition:none}}

@@ -1,0 +1,206 @@
+/* Persistent observatory workspace */
+/* LUNARA / Persistent Observatory + Focus Workspaces
+   Visual reorganisation only. Existing IDs, Three.js hosts, controls and calculations remain. */
+:root{
+  --nova-bg:#050913;--nova-panel:rgba(11,20,37,.94);--nova-panel-soft:rgba(15,28,49,.82);
+  --nova-line:rgba(130,184,229,.19);--nova-text:#eff7ff;--nova-muted:#91a8c3;
+  --nova-cyan:#83e2ff;--nova-violet:#a99aff;--nova-green:#76e4bd;--nova-gold:#ffd28b;
+  --nova-shadow:0 24px 70px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.045);
+}
+html{scroll-behavior:smooth;background:var(--nova-bg)}
+body{
+  min-height:100vh;color:var(--nova-text);overflow-x:hidden;
+  background:
+    radial-gradient(ellipse at 14% 12%,rgba(56,105,158,.20),transparent 32%),
+    radial-gradient(ellipse at 88% 80%,rgba(94,74,159,.15),transparent 35%),
+    linear-gradient(145deg,#050913 0%,#080e1c 54%,#050812 100%);
+}
+body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.18;
+  background-image:radial-gradient(rgba(208,232,255,.72) .65px,transparent .9px);background-size:61px 61px;
+  mask-image:linear-gradient(130deg,black,transparent 82%)}
+.app{width:100%;max-width:none;margin:0;padding:14px clamp(14px,2vw,34px) 22px}
+.topbar{
+  position:sticky;top:0;z-index:90;display:flex;justify-content:space-between;align-items:center;gap:18px;
+  min-height:72px;margin:0 0 14px;padding:8px 14px;border:1px solid rgba(137,186,230,.14);
+  border-radius:18px;background:rgba(5,11,23,.83);backdrop-filter:blur(22px);
+  box-shadow:0 12px 35px rgba(0,0,0,.22)
+}
+.topbar .brand{gap:12px}.topbar .lunara-emblem{width:48px;height:48px;flex-basis:48px}
+.topbar .lunara-logo{font-size:clamp(22px,1.8vw,30px);letter-spacing:.18em}
+.topbar .brand p{font-size:7px;letter-spacing:.15em}
+.top-actions{gap:8px}.top-actions .status-pill,.top-actions .chip{font-size:8px;padding:8px 10px}
+.top-actions #exportJson{white-space:nowrap}
+.hero,.mission-nav{display:none!important}
+#workspace.nova-grid{
+  display:grid!important;grid-template-columns:minmax(370px,41.5vw) minmax(0,1fr);gap:clamp(16px,2vw,30px);
+  align-items:start;width:100%;max-width:2100px;margin:0 auto;min-height:calc(100vh - 100px)
+}
+.nova-observatory{
+  position:sticky;top:98px;align-self:start;height:calc(100vh - 116px);min-height:610px;
+  display:flex;flex-direction:column;gap:10px;min-width:0
+}
+.nova-observatory-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 4px 3px;min-height:54px}
+.nova-overline{display:flex;align-items:center;gap:8px;color:#8fd8f5;font:8px "IBM Plex Mono",monospace;letter-spacing:.18em;text-transform:uppercase}
+.nova-live-dot{width:7px;height:7px;border-radius:50%;background:#78e9c0;box-shadow:0 0 13px #78e9c0;animation:nova-pulse 2s infinite}
+@keyframes nova-pulse{50%{opacity:.42;box-shadow:0 0 3px #78e9c0}}
+.nova-observatory-title{margin:4px 0 0;font:700 clamp(19px,2.1vw,29px)/1.08 "Sora",sans-serif;letter-spacing:-.055em;color:#f1f7ff}
+.nova-stage-tag{padding:8px 10px;border:1px solid rgba(128,196,239,.2);border-radius:10px;background:rgba(10,22,40,.65);color:#a7cbe7;font:8px "IBM Plex Mono",monospace;letter-spacing:.12em;white-space:nowrap}
+.nova-observatory .visual-intro{display:none!important}
+.nova-observatory .visual-grid{
+  display:grid!important;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  flex:1;min-height:0;height:auto;gap:11px;margin:0
+}
+.nova-observatory .visual-grid>.panel{
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;border:1px solid rgba(139,191,236,.21);
+  border-radius:18px;background:linear-gradient(145deg,rgba(13,25,47,.91),rgba(5,11,23,.95));
+  box-shadow:0 22px 65px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.045)
+}
+.nova-observatory .visual-grid>.panel:hover{transform:none}
+.nova-observatory .visual-grid .panel-head{min-height:39px;padding:9px 13px;background:linear-gradient(90deg,rgba(42,77,116,.25),transparent);border-bottom:1px solid rgba(140,190,231,.12)}
+.nova-observatory .visual-grid .panel-head h3{font:700 8px "IBM Plex Mono",monospace;letter-spacing:.15em;color:#dcefff}
+.nova-observatory .visual-grid .panel-head small{font:7px "IBM Plex Mono",monospace;color:#7798b9}
+.nova-observatory .scene-wrap{height:auto!important;min-height:0;flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,rgba(43,80,125,.34),rgba(7,14,28,.8) 66%,#040812 100%)}
+.nova-observatory .scene-wrap:before{inset:6% 8%;border-color:rgba(136,196,239,.08)}
+.nova-observatory .scene-wrap canvas{position:absolute;inset:0;z-index:0;width:100%!important;height:100%!important}
+.nova-observatory .legend{min-height:30px;padding:7px 11px;gap:10px;flex-wrap:wrap;background:rgba(5,10,21,.7);font:7px "IBM Plex Mono",monospace}
+.nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:7px;letter-spacing:.08em;padding:6px 8px}
+.nova-command{display:flex;flex-direction:column;gap:16px;min-width:0;padding:8px 2px 30px}
+.nova-command-head{padding:13px 3px 15px;border-bottom:1px solid rgba(137,182,224,.13)}
+.nova-command-kicker{color:#8bbbdc;font:8px "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.nova-command-head h1{margin:9px 0 7px;font:700 clamp(25px,3vw,43px)/1.02 "Sora",sans-serif;letter-spacing:-.065em;color:#f5f8ff;max-width:850px}
+.nova-command-head h1 em{color:#9be5ff;font-style:normal}
+.nova-command-head p{margin:0;color:#91a8c4;font-size:11px;line-height:1.7;max-width:690px}
+.nova-active-scenario{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid rgba(136,187,230,.15);border-radius:13px;background:linear-gradient(105deg,rgba(18,34,57,.79),rgba(10,19,36,.62))}
+.nova-active-scenario small{display:block;margin-bottom:3px;color:#7895b4;font:7px "IBM Plex Mono",monospace;letter-spacing:.14em}
+.nova-active-scenario strong{font:600 12px "Space Grotesk",sans-serif;color:#e7f3ff}
+.nova-coordinate-tag{color:#91ddf7;font:8px "IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+.nova-section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 2px 0}
+.nova-section-label strong{color:#c7d9ed;font:8px "IBM Plex Mono",monospace;letter-spacing:.16em;text-transform:uppercase}
+.nova-section-label span{color:#667f9d;font:7px "IBM Plex Mono",monospace;letter-spacing:.1em}
+.nova-command .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.nova-command .kpi{min-height:91px;padding:13px 15px;border:1px solid rgba(132,178,224,.16);border-radius:14px;background:linear-gradient(145deg,rgba(17,31,53,.88),rgba(7,14,27,.9));box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.nova-command .kpi .label{font:7px "IBM Plex Mono",monospace;letter-spacing:.12em;color:#8aa4c0}
+.nova-command .kpi strong{display:block;margin:7px 0 3px;font:600 clamp(18px,1.9vw,25px) "IBM Plex Mono",monospace;letter-spacing:-.04em}
+.nova-command .kpi small{font-size:8px;color:#7188a6}
+.nova-time-card{padding:13px 14px;border:1px solid rgba(134,180,226,.15);border-radius:14px;background:rgba(9,18,34,.74)}
+.nova-time-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.nova-time-card-head strong{font:8px "IBM Plex Mono",monospace;letter-spacing:.13em;color:#bed3e9}
+.nova-time-card-head span{color:#83d9f5;font:8px "IBM Plex Mono",monospace}
+.nova-time-card .time-control{padding:0;border:0;grid-template-columns:minmax(0,1fr) auto auto;gap:10px}
+.nova-time-card .time-control input{accent-color:#8adfff;min-width:0}
+.nova-time-card .time-label{color:#92a9c4;font:8px "IBM Plex Mono",monospace}
+.nova-time-card .btn{padding:7px 10px}
+.nova-workspaces{display:flex;flex-direction:column;gap:9px}
+.nova-workspace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.nova-launcher{
+  position:relative;display:grid;grid-template-columns:39px minmax(0,1fr) 18px;align-items:center;gap:10px;
+  min-height:76px;padding:12px;border:1px solid rgba(135,181,224,.16);border-radius:14px;
+  color:#e8f4ff;text-align:left;background:linear-gradient(145deg,rgba(17,30,52,.86),rgba(8,15,29,.92));
+  cursor:pointer;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s
+}
+.nova-launcher:hover{transform:translateY(-2px);border-color:rgba(131,218,255,.48);background:linear-gradient(145deg,rgba(25,48,74,.94),rgba(9,19,35,.96));box-shadow:0 12px 28px rgba(0,0,0,.2),0 0 24px rgba(93,172,223,.07)}
+.nova-launcher:focus-visible,.nova-close:focus-visible{outline:2px solid #8bdfff;outline-offset:3px}
+.nova-launcher-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(129,205,245,.23);border-radius:11px;background:rgba(92,160,205,.1);color:#94ddfa;font-size:17px}
+.nova-launcher-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nova-launcher-copy strong{font:600 10px "Space Grotesk",sans-serif;color:#edf7ff}
+.nova-launcher-copy small{font:7px/1.45 "IBM Plex Mono",monospace;color:#829ab7;letter-spacing:.015em}
+.nova-launcher-arrow{color:#75cde9;font-size:16px;text-align:center}
+.nova-launcher--compare{grid-column:1/-1;min-height:88px;border-color:rgba(124,208,241,.28);background:linear-gradient(105deg,rgba(23,47,70,.94),rgba(14,25,48,.93) 70%,rgba(35,28,64,.8))}
+.nova-launcher--compare .nova-launcher-icon{width:44px;height:44px;font-size:20px;color:#b6a1ff;border-color:rgba(178,159,255,.3);background:rgba(140,111,218,.12)}
+.nova-launcher--compare .nova-launcher-copy strong{font-size:12px}
+.nova-command-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 3px 0;border-top:1px solid rgba(136,183,229,.1);color:#6f87a4;font:7px "IBM Plex Mono",monospace;letter-spacing:.08em}
+/* Focused workspaces: occupy the full right half while the 3D observatory remains visible. */
+.nova-view-overlay{
+  position:fixed;z-index:75;left:calc(max(370px,41.5vw) + 22px);right:18px;top:91px;bottom:16px;
+  display:none;min-width:0;border:1px solid rgba(137,193,237,.22);border-radius:20px;
+  background:linear-gradient(145deg,rgba(9,17,33,.98),rgba(5,10,22,.985));
+  box-shadow:0 30px 100px rgba(0,0,0,.57),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(24px);overflow:hidden
+}
+.nova-view-overlay.is-open{display:flex;animation:nova-view-in .24s ease-out both}
+@keyframes nova-view-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.nova-view{display:none;flex-direction:column;min-width:0;min-height:0;width:100%;height:100%}
+.nova-view.is-active{display:flex}
+.nova-view-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 21px;border-bottom:1px solid rgba(136,183,228,.15);background:linear-gradient(100deg,rgba(34,62,95,.22),transparent 75%);flex:0 0 auto}
+.nova-view-overline{margin-bottom:4px;color:#86cde9;font:7px "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.nova-view-header h2{margin:0;color:#f1f7ff;font:700 clamp(18px,2vw,27px)/1.12 "Sora",sans-serif;letter-spacing:-.045em}
+.nova-view-header p{margin:5px 0 0;color:#8198b5;font-size:9px;line-height:1.5}
+.nova-close{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid rgba(141,189,233,.2);border-radius:10px;background:rgba(15,29,49,.85);color:#c6ddf2;font:8px "IBM Plex Mono",monospace;letter-spacing:.09em;cursor:pointer;white-space:nowrap}
+.nova-close:hover{border-color:rgba(130,220,255,.48);color:#fff}
+.nova-view-scroll{flex:1;min-height:0;overflow:auto;padding:19px 21px 24px;scrollbar-width:thin;scrollbar-color:rgba(112,160,207,.4) transparent}
+.nova-view-scroll>.panel,.nova-view-scroll>aside.panel{width:100%;max-width:none;margin:0 0 14px;position:relative;top:auto;max-height:none;overflow:visible}
+.nova-view-scroll .panel{border-color:rgba(138,184,230,.17);background:linear-gradient(150deg,rgba(14,25,44,.95),rgba(7,13,26,.97));box-shadow:0 16px 45px rgba(0,0,0,.2)}
+.nova-view-scroll .panel-head{padding:16px 19px;min-height:54px}
+.nova-view-scroll .panel-head h3{font-size:10px}
+.nova-view-scroll .panel-head small{font-size:8px}
+.nova-view-scroll .panel-body{padding:19px}
+.nova-view-scroll .compare-list{gap:10px}
+.nova-view-scroll .compare-item{padding:14px;border-radius:12px}
+.nova-view-scroll .data-table{font-size:9px;min-width:580px}
+.nova-view-scroll .data-table th,.nova-view-scroll .data-table td{padding:13px 12px}
+.nova-view-scroll .bottom-grid{grid-template-columns:1fr;gap:14px}
+.nova-view-scroll .metrics-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.nova-view-scroll .metric-card{padding:18px;border-color:rgba(137,182,226,.17);background:rgba(14,25,44,.85)}
+.nova-view-scroll .chart-canvas{height:300px}
+.nova-view-scroll .technical{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nova-view-scroll #science .technical{grid-template-columns:repeat(2,minmax(0,1fr))}
+.nova-view-scroll #windows{margin-top:14px}
+.nova-view-scroll .control-group{background:rgba(6,13,27,.56);border-color:rgba(136,181,224,.15)}
+.nova-view-scroll .control-group>summary{font-size:10px;padding:15px}
+.nova-view-scroll .control-group__body{padding:0 15px 15px}
+.nova-view-scroll .control-group .section-kicker,.nova-view-scroll .control-group .divider{display:none}
+.nova-view-scroll aside.panel{position:relative;top:auto;max-height:none;overflow:visible}
+.nova-view-scroll aside.panel .panel-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.nova-view-scroll aside.panel .panel-head{display:flex}
+.nova-view-scroll aside.panel .control-group{margin:0}
+.nova-view-scroll aside.panel #spiceBridge{margin-bottom:10px}
+.nova-view-scroll aside.panel .status-note{font-size:9px}
+.nova-view-scroll .search-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+.nova-view-scroll .candidate{padding:14px;border-radius:12px}
+.nova-view-scroll .candidate strong{font-size:10px}
+.nova-view-scroll .candidate p{font-size:8px}
+.nova-view-scroll #compare .panel-body{padding:22px}
+.nova-view-scroll #compare .compare-empty{padding:25px}
+.nova-view-scroll #explorer .panel-body{padding:22px}
+.nova-view-scroll #science .panel-body{padding:22px}
+.footer{padding:16px 0 4px;color:#647b98;font:7px "IBM Plex Mono",monospace;letter-spacing:.08em}
+body.nova-view-open{overflow:hidden}
+@media(max-width:1080px){
+  #workspace.nova-grid{grid-template-columns:minmax(330px,40vw) minmax(0,1fr);gap:15px}
+  .nova-view-overlay{left:calc(max(330px,40vw) + 18px);right:12px;top:89px;bottom:12px}
+  .nova-command .kpis{gap:8px}.nova-command .kpi{padding:11px}
+  .nova-workspace-grid{grid-template-columns:1fr}
+  .nova-launcher--compare{grid-column:auto}
+}
+@media(max-width:760px){
+  .app{padding:8px 10px 16px}.topbar{min-height:62px;padding:7px 9px;margin-bottom:10px;flex-wrap:wrap}
+  .topbar .lunara-emblem{width:40px;height:40px;flex-basis:40px}.top-actions{justify-content:flex-end}
+  #workspace.nova-grid{grid-template-columns:minmax(0,1fr);gap:14px;min-height:0}
+  .nova-observatory{position:sticky;top:72px;height:43vh;min-height:300px;z-index:30;gap:5px;padding:5px;border:1px solid rgba(132,184,230,.12);border-radius:16px;background:rgba(5,11,23,.88);backdrop-filter:blur(14px)}
+  .nova-observatory-head{min-height:34px;padding:0 4px}
+  .nova-observatory-title{font-size:17px}.nova-overline{font-size:6px}.nova-stage-tag{font-size:6px;padding:6px}
+  .nova-observatory .visual-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr;gap:6px}
+  .nova-observatory .visual-grid .panel-head{padding:7px 8px;min-height:32px}
+  .nova-observatory .visual-grid .panel-head h3{font-size:6px;letter-spacing:.08em}
+  .nova-observatory .visual-grid .panel-head small{display:none}
+  .nova-observatory .legend{font-size:0;min-height:24px;padding:5px 7px;gap:6px}
+  .nova-observatory .legend span{font-size:6px}
+  .nova-observatory .legend .inline-note{display:none}
+  .nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:5px;padding:4px 5px}
+  .nova-command{padding:6px 2px 20px;gap:12px}
+  .nova-command-head{padding:9px 3px 12px}.nova-command-head h1{font-size:27px}
+  .nova-command-head p{font-size:9px}
+  .nova-command .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-command .kpi{min-height:75px;padding:9px}.nova-command .kpi strong{font-size:16px}
+  .nova-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-launcher{min-height:70px;grid-template-columns:30px minmax(0,1fr) 12px;padding:9px;gap:7px}
+  .nova-launcher-icon{width:29px;height:29px;font-size:13px}.nova-launcher-copy strong{font-size:8px}.nova-launcher-copy small{font-size:6px}
+  .nova-launcher--compare{grid-column:1/-1}
+  .nova-view-overlay{left:8px;right:8px;top:calc(43vh + 84px);bottom:8px;border-radius:15px}
+  .nova-view-header{padding:11px 13px}.nova-view-header h2{font-size:17px}.nova-view-header p{font-size:7px}
+  .nova-view-scroll{padding:12px}
+  .nova-view-scroll .metrics-row,.nova-view-scroll .technical,.nova-view-scroll #science .technical{grid-template-columns:1fr}
+  .nova-view-scroll .search-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-view-scroll aside.panel .panel-body{grid-template-columns:1fr}
+  .nova-view-scroll .chart-canvas{height:230px}
+}
+@media(prefers-reduced-motion:reduce){.nova-live-dot{animation:none}.nova-view-overlay.is-open{animation:none}.nova-launcher{transition:none}}

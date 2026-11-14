@@ -1,0 +1,16 @@
+/* Local SPICE connection box */
+.spice-bridge{
+  margin:4px 0 15px;padding:15px;border:1px solid rgba(121,228,255,.24);
+  border-radius:15px;background:
+    radial-gradient(circle at 100% 0%,rgba(63,163,206,.15),transparent 42%),
+    linear-gradient(135deg,rgba(13,33,52,.94),rgba(9,17,31,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 10px 30px rgba(0,0,0,.15)
+}
+.spice-bridge__eyebrow{font:800 9px "IBM Plex Mono",monospace;letter-spacing:.16em;color:#8fe7ff;margin-bottom:7px}
+.spice-bridge__copy{font-size:11px;line-height:1.6;color:#aebfd5;margin-bottom:12px}
+#spiceConnect{min-height:42px;white-space:normal}
+#spiceConnect:disabled{opacity:.65;cursor:wait;transform:none}
+#spiceServiceStatus{margin-top:10px;font-size:10px;line-height:1.55;overflow-wrap:anywhere}
+#spiceServiceStatus.good{border-color:rgba(93,218,173,.36);background:rgba(16,58,47,.42);color:#a9f0d2}
+#spiceServiceStatus.warn{border-color:rgba(255,190,105,.28)}
+@media(max-width:620px){.spice-bridge{padding:12px}}
