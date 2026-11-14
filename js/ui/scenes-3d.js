@@ -9,19 +9,19 @@
 function makeLabelSprite(text,color){const c=document.createElement('canvas');c.width=320;c.height=90;const x=c.getContext('2d');x.fillStyle='rgba(12,7,25,.90)';x.fillRect(3,3,314,84);x.strokeStyle=color;x.lineWidth=4;x.strokeRect(3,3,314,84);x.fillStyle=color;x.font='600 34px "Space Grotesk", sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(text,160,45);const tex=new THREE.CanvasTexture(c);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));s.scale.set(25,7,1);return s;}
 function makeStarField(scene){const g=new THREE.BufferGeometry(),p=[];for(let i=0;i<1100;i++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=170,xy=Math.sqrt(1-u*u);p.push(r*xy*Math.cos(a),r*u,r*xy*Math.sin(a));}g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xd8e8ff,size:0.8,transparent:true,opacity:.78})));}
 function makeGround(scene){
-  const loader=new THREE.TextureLoader();let moonTex=null;try{moonTex=loader.load('models/moonsurface.jpg');}catch(e){console.warn('No se pudo cargar models/moonsurface.jpg',e);}const geometry=new THREE.SphereGeometry(400,64,64),mat=new THREE.MeshStandardMaterial({map:moonTex,roughness:1,metalness:0});const ground=new THREE.Mesh(geometry,mat);ground.position.set(0,-413,0);scene.add(ground);
+  const loader=new THREE.TextureLoader();let moonTex=null;try{moonTex=loader.load('models/moonsurface.jpg');}catch(e){console.warn('No se pudo cargar models/moonsurface.jpg',e);}const geometry=new THREE.SphereGeometry(400,64,64),mat=new THREE.MeshStandardMaterial({map:moonTex,roughness:1,metalness:0});const ground=new THREE.Mesh(geometry,mat);ground.position.set(0,-400,0);scene.add(ground);
 
 }
 function createSky3D(){
   if(!THREE) throw new Error('Three.js is unavailable.');
   const host=$('skyScene');const scene=new THREE.Scene();const skyLoader=new THREE.TextureLoader();let skyTex=null;try{skyTex=skyLoader.load('models/starssky.jpg');skyTex.mapping=THREE.EquirectangularReflectionMapping;scene.background=skyTex;}catch(e){console.warn('No se pudo cargar models/starssky.jpg',e);scene.background=new THREE.Color(0x0b0718);}
 
-  const camera=new THREE.PerspectiveCamera(67,host.clientWidth/host.clientHeight,.1,500);camera.position.set(0,1,0);camera.rotation.order='YXZ';camera.rotation.x=-.045;
+  const camera=new THREE.PerspectiveCamera(67,host.clientWidth/host.clientHeight,.1,500);camera.position.set(0,0,0);camera.rotation.order='YXZ';camera.rotation.x=0;
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,host.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;host.appendChild(renderer.domElement);
-  scene.add(new THREE.AmbientLight(0xffffff,.25));makeGround(scene);
+  scene.add(new THREE.AmbientLight(0xffffff,.15));makeGround(scene);
   const sunLight=new THREE.DirectionalLight(0xffffff,3);sunLight.target.position.set(0,0,0);scene.add(sunLight);scene.add(sunLight.target);
   const sunLoader=new THREE.TextureLoader();let sunTex=null;try{sunTex=sunLoader.load('models/sunsurface.jpg');}catch(e){console.warn('No se pudo cargar models/sunsurface.jpg',e);}const sun=new THREE.Mesh(new THREE.SphereGeometry(3.4,32,32),new THREE.MeshBasicMaterial({map:sunTex}));scene.add(sun);const sunLabel=makeLabelSprite('SUN','#ffd27a');scene.add(sunLabel);
-  const earthLoader=new THREE.TextureLoader();let earthTex=null;try{earthTex=earthLoader.load('models/earthsurface.jpg');}catch(e){console.warn('No se pudo cargar models/earthsurface.jpg',e);}const earth=new THREE.Group();const earthMesh=new THREE.Mesh(new THREE.SphereGeometry(3.7,40,32),new THREE.MeshBasicMaterial({map:earthTex}));earth.add(earthMesh);scene.add(earth);const earthLabel=makeLabelSprite('EARTH','#81d4ff');scene.add(earthLabel);
+  const earthLoader=new THREE.TextureLoader();let earthTex=null;try{earthTex=earthLoader.load('models/earthsurface.jpg');}catch(e){console.warn('No se pudo cargar models/earthsurface.jpg',e);}const earth=new THREE.Group();const earthMesh=new THREE.Mesh(new THREE.SphereGeometry(3.7,40,32),new THREE.MeshStandardMaterial({map:earthTex,roughness:0.75,metalness:0}));earth.add(earthMesh);scene.add(earth);const earthLabel=makeLabelSprite('EARTH','#81d4ff');scene.add(earthLabel);
   let dragging=false,px=0,py=0,yaw=0,pitch=-.05,zoom=1;
   const down=e=>{dragging=true;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture?.(e.pointerId);};
   const move=e=>{if(!dragging)return;yaw-=(e.clientX-px)*.005;pitch=clamp(pitch+(e.clientY-py)*.005,-1.25,1.25);px=e.clientX;py=e.clientY;camera.rotation.set(pitch,yaw,0,'YXZ');};
@@ -44,7 +44,7 @@ async function createMoon3D(){
   const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(host.clientWidth,host.clientHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;host.appendChild(renderer.domElement);
   scene.add(new THREE.AmbientLight(0xffffff,.25));
   const siteTarget=new THREE.Object3D();scene.add(siteTarget);
-  const siteLight=new THREE.SpotLight(0xfff0d0,12,18,Math.PI*8/180,.5,1);siteLight.target=siteTarget;scene.add(siteLight);
+  const siteLight=new THREE.SpotLight(0xfff0d0,6,18,Math.PI*2/180,.5,1);siteLight.target=siteTarget;scene.add(siteLight);
   let moonMesh=null;
   await new Promise((resolve,reject)=>{new GLTFLoader().load('models/moon.glb',gltf=>{const model=gltf.scene;model.scale.set(1.27,1.27,1.27);scene.add(model);moonMesh=model;resolve();},undefined,reject);});
   const axes=new THREE.AxesHelper(1.65);axes.material.transparent=true;axes.material.opacity=.22;scene.add(axes);
