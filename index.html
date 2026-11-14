@@ -1041,6 +1041,304 @@ body {
 @media(max-width:620px){.spice-bridge{padding:12px}}
 </style>
 
+
+<style id="lunara-persistent-observatory-redesign">
+/* LUNARA / Persistent Observatory + Focus Workspaces
+   Visual reorganisation only. Existing IDs, Three.js hosts, controls and calculations remain. */
+:root{
+  --nova-bg:#050913;--nova-panel:rgba(11,20,37,.94);--nova-panel-soft:rgba(15,28,49,.82);
+  --nova-line:rgba(130,184,229,.19);--nova-text:#eff7ff;--nova-muted:#91a8c3;
+  --nova-cyan:#83e2ff;--nova-violet:#a99aff;--nova-green:#76e4bd;--nova-gold:#ffd28b;
+  --nova-shadow:0 24px 70px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.045);
+}
+html{scroll-behavior:smooth;background:var(--nova-bg)}
+body{
+  min-height:100vh;color:var(--nova-text);overflow-x:hidden;
+  background:
+    radial-gradient(ellipse at 14% 12%,rgba(56,105,158,.20),transparent 32%),
+    radial-gradient(ellipse at 88% 80%,rgba(94,74,159,.15),transparent 35%),
+    linear-gradient(145deg,#050913 0%,#080e1c 54%,#050812 100%);
+}
+body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.18;
+  background-image:radial-gradient(rgba(208,232,255,.72) .65px,transparent .9px);background-size:61px 61px;
+  mask-image:linear-gradient(130deg,black,transparent 82%)}
+.app{width:100%;max-width:none;margin:0;padding:14px clamp(14px,2vw,34px) 22px}
+.topbar{
+  position:sticky;top:0;z-index:90;display:flex;justify-content:space-between;align-items:center;gap:18px;
+  min-height:72px;margin:0 0 14px;padding:8px 14px;border:1px solid rgba(137,186,230,.14);
+  border-radius:18px;background:rgba(5,11,23,.83);backdrop-filter:blur(22px);
+  box-shadow:0 12px 35px rgba(0,0,0,.22)
+}
+.topbar .brand{gap:12px}.topbar .lunara-emblem{width:48px;height:48px;flex-basis:48px}
+.topbar .lunara-logo{font-size:clamp(22px,1.8vw,30px);letter-spacing:.18em}
+.topbar .brand p{font-size:7px;letter-spacing:.15em}
+.top-actions{gap:8px}.top-actions .status-pill,.top-actions .chip{font-size:8px;padding:8px 10px}
+.top-actions #exportJson{white-space:nowrap}
+.hero,.mission-nav{display:none!important}
+#workspace.nova-grid{
+  display:grid!important;grid-template-columns:minmax(370px,41.5vw) minmax(0,1fr);gap:clamp(16px,2vw,30px);
+  align-items:start;width:100%;max-width:2100px;margin:0 auto;min-height:calc(100vh - 100px)
+}
+.nova-observatory{
+  position:sticky;top:98px;align-self:start;height:calc(100vh - 116px);min-height:610px;
+  display:flex;flex-direction:column;gap:10px;min-width:0
+}
+.nova-observatory-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 4px 3px;min-height:54px}
+.nova-overline{display:flex;align-items:center;gap:8px;color:#8fd8f5;font:8px "IBM Plex Mono",monospace;letter-spacing:.18em;text-transform:uppercase}
+.nova-live-dot{width:7px;height:7px;border-radius:50%;background:#78e9c0;box-shadow:0 0 13px #78e9c0;animation:nova-pulse 2s infinite}
+@keyframes nova-pulse{50%{opacity:.42;box-shadow:0 0 3px #78e9c0}}
+.nova-observatory-title{margin:4px 0 0;font:700 clamp(19px,2.1vw,29px)/1.08 "Sora",sans-serif;letter-spacing:-.055em;color:#f1f7ff}
+.nova-stage-tag{padding:8px 10px;border:1px solid rgba(128,196,239,.2);border-radius:10px;background:rgba(10,22,40,.65);color:#a7cbe7;font:8px "IBM Plex Mono",monospace;letter-spacing:.12em;white-space:nowrap}
+.nova-observatory .visual-intro{display:none!important}
+.nova-observatory .visual-grid{
+  display:grid!important;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  flex:1;min-height:0;height:auto;gap:11px;margin:0
+}
+.nova-observatory .visual-grid>.panel{
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;border:1px solid rgba(139,191,236,.21);
+  border-radius:18px;background:linear-gradient(145deg,rgba(13,25,47,.91),rgba(5,11,23,.95));
+  box-shadow:0 22px 65px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.045)
+}
+.nova-observatory .visual-grid>.panel:hover{transform:none}
+.nova-observatory .visual-grid .panel-head{min-height:39px;padding:9px 13px;background:linear-gradient(90deg,rgba(42,77,116,.25),transparent);border-bottom:1px solid rgba(140,190,231,.12)}
+.nova-observatory .visual-grid .panel-head h3{font:700 8px "IBM Plex Mono",monospace;letter-spacing:.15em;color:#dcefff}
+.nova-observatory .visual-grid .panel-head small{font:7px "IBM Plex Mono",monospace;color:#7798b9}
+.nova-observatory .scene-wrap{height:auto!important;min-height:0;flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,rgba(43,80,125,.34),rgba(7,14,28,.8) 66%,#040812 100%)}
+.nova-observatory .scene-wrap:before{inset:6% 8%;border-color:rgba(136,196,239,.08)}
+.nova-observatory .scene-wrap canvas{position:absolute;inset:0;z-index:0;width:100%!important;height:100%!important}
+.nova-observatory .legend{min-height:30px;padding:7px 11px;gap:10px;flex-wrap:wrap;background:rgba(5,10,21,.7);font:7px "IBM Plex Mono",monospace}
+.nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:7px;letter-spacing:.08em;padding:6px 8px}
+.nova-command{display:flex;flex-direction:column;gap:16px;min-width:0;padding:8px 2px 30px}
+.nova-command-head{padding:13px 3px 15px;border-bottom:1px solid rgba(137,182,224,.13)}
+.nova-command-kicker{color:#8bbbdc;font:8px "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.nova-command-head h1{margin:9px 0 7px;font:700 clamp(25px,3vw,43px)/1.02 "Sora",sans-serif;letter-spacing:-.065em;color:#f5f8ff;max-width:850px}
+.nova-command-head h1 em{color:#9be5ff;font-style:normal}
+.nova-command-head p{margin:0;color:#91a8c4;font-size:11px;line-height:1.7;max-width:690px}
+.nova-active-scenario{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid rgba(136,187,230,.15);border-radius:13px;background:linear-gradient(105deg,rgba(18,34,57,.79),rgba(10,19,36,.62))}
+.nova-active-scenario small{display:block;margin-bottom:3px;color:#7895b4;font:7px "IBM Plex Mono",monospace;letter-spacing:.14em}
+.nova-active-scenario strong{font:600 12px "Space Grotesk",sans-serif;color:#e7f3ff}
+.nova-coordinate-tag{color:#91ddf7;font:8px "IBM Plex Mono",monospace;text-align:right;white-space:nowrap}
+.nova-section-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:1px 2px 0}
+.nova-section-label strong{color:#c7d9ed;font:8px "IBM Plex Mono",monospace;letter-spacing:.16em;text-transform:uppercase}
+.nova-section-label span{color:#667f9d;font:7px "IBM Plex Mono",monospace;letter-spacing:.1em}
+.nova-command .kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0}
+.nova-command .kpi{min-height:91px;padding:13px 15px;border:1px solid rgba(132,178,224,.16);border-radius:14px;background:linear-gradient(145deg,rgba(17,31,53,.88),rgba(7,14,27,.9));box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.nova-command .kpi .label{font:7px "IBM Plex Mono",monospace;letter-spacing:.12em;color:#8aa4c0}
+.nova-command .kpi strong{display:block;margin:7px 0 3px;font:600 clamp(18px,1.9vw,25px) "IBM Plex Mono",monospace;letter-spacing:-.04em}
+.nova-command .kpi small{font-size:8px;color:#7188a6}
+.nova-time-card{padding:13px 14px;border:1px solid rgba(134,180,226,.15);border-radius:14px;background:rgba(9,18,34,.74)}
+.nova-time-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.nova-time-card-head strong{font:8px "IBM Plex Mono",monospace;letter-spacing:.13em;color:#bed3e9}
+.nova-time-card-head span{color:#83d9f5;font:8px "IBM Plex Mono",monospace}
+.nova-time-card .time-control{padding:0;border:0;grid-template-columns:minmax(0,1fr) auto auto;gap:10px}
+.nova-time-card .time-control input{accent-color:#8adfff;min-width:0}
+.nova-time-card .time-label{color:#92a9c4;font:8px "IBM Plex Mono",monospace}
+.nova-time-card .btn{padding:7px 10px}
+.nova-workspaces{display:flex;flex-direction:column;gap:9px}
+.nova-workspace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.nova-launcher{
+  position:relative;display:grid;grid-template-columns:39px minmax(0,1fr) 18px;align-items:center;gap:10px;
+  min-height:76px;padding:12px;border:1px solid rgba(135,181,224,.16);border-radius:14px;
+  color:#e8f4ff;text-align:left;background:linear-gradient(145deg,rgba(17,30,52,.86),rgba(8,15,29,.92));
+  cursor:pointer;transition:transform .2s,border-color .2s,background .2s,box-shadow .2s
+}
+.nova-launcher:hover{transform:translateY(-2px);border-color:rgba(131,218,255,.48);background:linear-gradient(145deg,rgba(25,48,74,.94),rgba(9,19,35,.96));box-shadow:0 12px 28px rgba(0,0,0,.2),0 0 24px rgba(93,172,223,.07)}
+.nova-launcher:focus-visible,.nova-close:focus-visible{outline:2px solid #8bdfff;outline-offset:3px}
+.nova-launcher-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(129,205,245,.23);border-radius:11px;background:rgba(92,160,205,.1);color:#94ddfa;font-size:17px}
+.nova-launcher-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nova-launcher-copy strong{font:600 10px "Space Grotesk",sans-serif;color:#edf7ff}
+.nova-launcher-copy small{font:7px/1.45 "IBM Plex Mono",monospace;color:#829ab7;letter-spacing:.015em}
+.nova-launcher-arrow{color:#75cde9;font-size:16px;text-align:center}
+.nova-launcher--compare{grid-column:1/-1;min-height:88px;border-color:rgba(124,208,241,.28);background:linear-gradient(105deg,rgba(23,47,70,.94),rgba(14,25,48,.93) 70%,rgba(35,28,64,.8))}
+.nova-launcher--compare .nova-launcher-icon{width:44px;height:44px;font-size:20px;color:#b6a1ff;border-color:rgba(178,159,255,.3);background:rgba(140,111,218,.12)}
+.nova-launcher--compare .nova-launcher-copy strong{font-size:12px}
+.nova-command-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 3px 0;border-top:1px solid rgba(136,183,229,.1);color:#6f87a4;font:7px "IBM Plex Mono",monospace;letter-spacing:.08em}
+/* Focused workspaces: occupy the full right half while the 3D observatory remains visible. */
+.nova-view-overlay{
+  position:fixed;z-index:75;left:calc(max(370px,41.5vw) + 22px);right:18px;top:91px;bottom:16px;
+  display:none;min-width:0;border:1px solid rgba(137,193,237,.22);border-radius:20px;
+  background:linear-gradient(145deg,rgba(9,17,33,.98),rgba(5,10,22,.985));
+  box-shadow:0 30px 100px rgba(0,0,0,.57),inset 0 1px 0 rgba(255,255,255,.04);backdrop-filter:blur(24px);overflow:hidden
+}
+.nova-view-overlay.is-open{display:flex;animation:nova-view-in .24s ease-out both}
+@keyframes nova-view-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.nova-view{display:none;flex-direction:column;min-width:0;min-height:0;width:100%;height:100%}
+.nova-view.is-active{display:flex}
+.nova-view-header{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 21px;border-bottom:1px solid rgba(136,183,228,.15);background:linear-gradient(100deg,rgba(34,62,95,.22),transparent 75%);flex:0 0 auto}
+.nova-view-overline{margin-bottom:4px;color:#86cde9;font:7px "IBM Plex Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.nova-view-header h2{margin:0;color:#f1f7ff;font:700 clamp(18px,2vw,27px)/1.12 "Sora",sans-serif;letter-spacing:-.045em}
+.nova-view-header p{margin:5px 0 0;color:#8198b5;font-size:9px;line-height:1.5}
+.nova-close{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid rgba(141,189,233,.2);border-radius:10px;background:rgba(15,29,49,.85);color:#c6ddf2;font:8px "IBM Plex Mono",monospace;letter-spacing:.09em;cursor:pointer;white-space:nowrap}
+.nova-close:hover{border-color:rgba(130,220,255,.48);color:#fff}
+.nova-view-scroll{flex:1;min-height:0;overflow:auto;padding:19px 21px 24px;scrollbar-width:thin;scrollbar-color:rgba(112,160,207,.4) transparent}
+.nova-view-scroll>.panel,.nova-view-scroll>aside.panel{width:100%;max-width:none;margin:0 0 14px;position:relative;top:auto;max-height:none;overflow:visible}
+.nova-view-scroll .panel{border-color:rgba(138,184,230,.17);background:linear-gradient(150deg,rgba(14,25,44,.95),rgba(7,13,26,.97));box-shadow:0 16px 45px rgba(0,0,0,.2)}
+.nova-view-scroll .panel-head{padding:16px 19px;min-height:54px}
+.nova-view-scroll .panel-head h3{font-size:10px}
+.nova-view-scroll .panel-head small{font-size:8px}
+.nova-view-scroll .panel-body{padding:19px}
+.nova-view-scroll .compare-list{gap:10px}
+.nova-view-scroll .compare-item{padding:14px;border-radius:12px}
+.nova-view-scroll .data-table{font-size:9px;min-width:580px}
+.nova-view-scroll .data-table th,.nova-view-scroll .data-table td{padding:13px 12px}
+.nova-view-scroll .bottom-grid{grid-template-columns:1fr;gap:14px}
+.nova-view-scroll .metrics-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.nova-view-scroll .metric-card{padding:18px;border-color:rgba(137,182,226,.17);background:rgba(14,25,44,.85)}
+.nova-view-scroll .chart-canvas{height:300px}
+.nova-view-scroll .technical{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nova-view-scroll #science .technical{grid-template-columns:repeat(2,minmax(0,1fr))}
+.nova-view-scroll #windows{margin-top:14px}
+.nova-view-scroll .control-group{background:rgba(6,13,27,.56);border-color:rgba(136,181,224,.15)}
+.nova-view-scroll .control-group>summary{font-size:10px;padding:15px}
+.nova-view-scroll .control-group__body{padding:0 15px 15px}
+.nova-view-scroll .control-group .section-kicker,.nova-view-scroll .control-group .divider{display:none}
+.nova-view-scroll aside.panel{position:relative;top:auto;max-height:none;overflow:visible}
+.nova-view-scroll aside.panel .panel-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.nova-view-scroll aside.panel .panel-head{display:flex}
+.nova-view-scroll aside.panel .control-group{margin:0}
+.nova-view-scroll aside.panel #spiceBridge{margin-bottom:10px}
+.nova-view-scroll aside.panel .status-note{font-size:9px}
+.nova-view-scroll .search-controls{grid-template-columns:repeat(4,minmax(0,1fr))}
+.nova-view-scroll .candidate{padding:14px;border-radius:12px}
+.nova-view-scroll .candidate strong{font-size:10px}
+.nova-view-scroll .candidate p{font-size:8px}
+.nova-view-scroll #compare .panel-body{padding:22px}
+.nova-view-scroll #compare .compare-empty{padding:25px}
+.nova-view-scroll #explorer .panel-body{padding:22px}
+.nova-view-scroll #science .panel-body{padding:22px}
+.footer{padding:16px 0 4px;color:#647b98;font:7px "IBM Plex Mono",monospace;letter-spacing:.08em}
+body.nova-view-open{overflow:hidden}
+@media(max-width:1080px){
+  #workspace.nova-grid{grid-template-columns:minmax(330px,40vw) minmax(0,1fr);gap:15px}
+  .nova-view-overlay{left:calc(max(330px,40vw) + 18px);right:12px;top:89px;bottom:12px}
+  .nova-command .kpis{gap:8px}.nova-command .kpi{padding:11px}
+  .nova-workspace-grid{grid-template-columns:1fr}
+  .nova-launcher--compare{grid-column:auto}
+}
+@media(max-width:760px){
+  .app{padding:8px 10px 16px}.topbar{min-height:62px;padding:7px 9px;margin-bottom:10px;flex-wrap:wrap}
+  .topbar .lunara-emblem{width:40px;height:40px;flex-basis:40px}.top-actions{justify-content:flex-end}
+  #workspace.nova-grid{grid-template-columns:minmax(0,1fr);gap:14px;min-height:0}
+  .nova-observatory{position:sticky;top:72px;height:43vh;min-height:300px;z-index:30;gap:5px;padding:5px;border:1px solid rgba(132,184,230,.12);border-radius:16px;background:rgba(5,11,23,.88);backdrop-filter:blur(14px)}
+  .nova-observatory-head{min-height:34px;padding:0 4px}
+  .nova-observatory-title{font-size:17px}.nova-overline{font-size:6px}.nova-stage-tag{font-size:6px;padding:6px}
+  .nova-observatory .visual-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr;gap:6px}
+  .nova-observatory .visual-grid .panel-head{padding:7px 8px;min-height:32px}
+  .nova-observatory .visual-grid .panel-head h3{font-size:6px;letter-spacing:.08em}
+  .nova-observatory .visual-grid .panel-head small{display:none}
+  .nova-observatory .legend{font-size:0;min-height:24px;padding:5px 7px;gap:6px}
+  .nova-observatory .legend span{font-size:6px}
+  .nova-observatory .legend .inline-note{display:none}
+  .nova-observatory .scene-label,.nova-observatory .scene-status,.nova-observatory .scene-help{font-size:5px;padding:4px 5px}
+  .nova-command{padding:6px 2px 20px;gap:12px}
+  .nova-command-head{padding:9px 3px 12px}.nova-command-head h1{font-size:27px}
+  .nova-command-head p{font-size:9px}
+  .nova-command .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-command .kpi{min-height:75px;padding:9px}.nova-command .kpi strong{font-size:16px}
+  .nova-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-launcher{min-height:70px;grid-template-columns:30px minmax(0,1fr) 12px;padding:9px;gap:7px}
+  .nova-launcher-icon{width:29px;height:29px;font-size:13px}.nova-launcher-copy strong{font-size:8px}.nova-launcher-copy small{font-size:6px}
+  .nova-launcher--compare{grid-column:1/-1}
+  .nova-view-overlay{left:8px;right:8px;top:calc(43vh + 84px);bottom:8px;border-radius:15px}
+  .nova-view-header{padding:11px 13px}.nova-view-header h2{font-size:17px}.nova-view-header p{font-size:7px}
+  .nova-view-scroll{padding:12px}
+  .nova-view-scroll .metrics-row,.nova-view-scroll .technical,.nova-view-scroll #science .technical{grid-template-columns:1fr}
+  .nova-view-scroll .search-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nova-view-scroll aside.panel .panel-body{grid-template-columns:1fr}
+  .nova-view-scroll .chart-canvas{height:230px}
+}
+@media(prefers-reduced-motion:reduce){.nova-live-dot{animation:none}.nova-view-overlay.is-open{animation:none}.nova-launcher{transition:none}}
+</style>
+
+
+<style id="lunara-mission-comparison-studio">
+/* Comparison Studio: four independent mission snapshots with persistent 3D mini-observatories. */
+#compare .compare-main{padding:20px 20px 22px}
+.compare-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 17px;padding:13px 14px;border:1px solid rgba(133,184,229,.15);border-radius:14px;background:linear-gradient(105deg,rgba(22,40,65,.72),rgba(8,17,32,.76))}
+.compare-toolbar>div:first-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.compare-toolbar strong{color:#d9ecff;font:800 8px "IBM Plex Mono",monospace;letter-spacing:.14em}
+.compare-toolbar small{color:#829bb9;font-size:9px;line-height:1.5}
+.compare-toolbar-actions{justify-content:flex-end;flex-wrap:wrap}
+.compare-cards-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.compare-empty--studio{grid-column:1/-1;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;padding:30px;border:1px dashed rgba(133,183,227,.28);border-radius:16px;background:radial-gradient(ellipse at 50% 0%,rgba(55,103,153,.12),transparent 65%),rgba(8,16,30,.5);text-align:center}
+.compare-empty--studio strong{font:600 16px "Sora",sans-serif;color:#e7f3ff}
+.compare-empty--studio span{max-width:450px;color:#8299b4;font-size:10px;line-height:1.65}
+.mission-compare-card{position:relative;display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid rgba(131,181,226,.19);border-radius:16px;background:linear-gradient(155deg,rgba(16,29,49,.98),rgba(7,14,27,.98));box-shadow:0 15px 36px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.035);transition:border-color .2s,transform .2s}
+.mission-compare-card:hover{border-color:rgba(130,214,255,.42);transform:translateY(-2px)}
+.mission-compare-card__head{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:9px;padding:12px 13px 10px}
+.mission-compare-card__index{display:grid;place-items:center;width:29px;height:29px;border:1px solid rgba(130,204,246,.25);border-radius:9px;background:rgba(80,148,198,.1);color:#9cddfa;font:700 9px "IBM Plex Mono",monospace}
+.mission-compare-card__identity{min-width:0;display:flex;flex-direction:column;gap:3px}
+.mission-compare-card__identity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#eef7ff;font:600 11px "Space Grotesk",sans-serif}
+.mission-compare-card__identity small{color:#7f98b5;font:7px "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+.mission-compare-card__remove{display:grid;place-items:center;width:28px;height:28px;border:1px solid rgba(139,178,220,.15);border-radius:8px;background:rgba(7,14,27,.7);color:#91a9c2;cursor:pointer;font-size:16px}
+.mission-compare-card__remove:hover{color:#ffabb4;border-color:rgba(255,130,150,.4)}
+.compare-preview{position:relative;height:174px;overflow:hidden;border-top:1px solid rgba(131,180,223,.1);border-bottom:1px solid rgba(131,180,223,.1);background:radial-gradient(ellipse at 50% 35%,#18304a,#07101e 72%)}
+.compare-preview canvas{position:absolute;inset:0;display:block;width:100%;height:100%;outline:none}
+.compare-preview__tag{position:absolute;z-index:2;top:9px;left:10px;padding:5px 7px;border:1px solid rgba(139,197,235,.17);border-radius:6px;background:rgba(5,12,23,.75);color:#c8e4f7;font:7px "IBM Plex Mono",monospace;letter-spacing:.1em;pointer-events:none}
+.compare-preview__quality{position:absolute;z-index:2;right:10px;top:9px;padding:5px 7px;border:1px solid rgba(129,215,180,.2);border-radius:6px;background:rgba(5,12,23,.78);color:#8de5c1;font:7px "IBM Plex Mono",monospace;pointer-events:none}
+.compare-preview__readout{position:absolute;left:10px;right:10px;bottom:8px;display:flex;justify-content:space-between;gap:8px;color:#b8cce0;font:7px "IBM Plex Mono",monospace;text-shadow:0 1px 6px #000;pointer-events:none}
+.compare-preview__readout b{font-weight:600;color:#f2f7fc}
+.compare-card-scrubber{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 12px 2px}
+.compare-card-scrubber input{width:100%;min-width:0;accent-color:#8ddfff}
+.compare-card-scrubber span{color:#92a9c4;font:7px "IBM Plex Mono",monospace;white-space:nowrap}
+.compare-card-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:10px 12px 9px}
+.compare-card-kpi{min-width:0;padding:9px 8px;border:1px solid rgba(132,178,223,.12);border-radius:9px;background:rgba(6,13,25,.62)}
+.compare-card-kpi span{display:block;color:#8198b4;font:6px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase}
+.compare-card-kpi strong{display:block;margin-top:5px;color:#e8f4ff;font:600 13px "IBM Plex Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.compare-card-kpi:nth-child(1) strong{color:#ffd27e}.compare-card-kpi:nth-child(2) strong{color:#91d9ff}.compare-card-kpi:nth-child(3) strong{color:#8ce5bd}
+.mission-compare-card__meta{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
+.mission-compare-card__meta span{padding:5px 7px;border:1px solid rgba(132,178,223,.11);border-radius:6px;color:#8199b6;background:rgba(5,12,23,.4);font:6px "IBM Plex Mono",monospace}
+.mission-compare-card__actions{display:flex;gap:7px;padding:0 12px 12px;margin-top:auto}
+.mission-compare-card__actions .btn{flex:1;justify-content:center;padding:8px 9px;font-size:8px}
+.compare-matrix-wrap{margin-top:17px;padding-top:15px;border-top:1px solid rgba(130,180,224,.13)}
+.compare-matrix-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:0 2px 9px}
+.compare-matrix-title strong{color:#c8def1;font:800 8px "IBM Plex Mono",monospace;letter-spacing:.14em}
+.compare-matrix-title span{color:#7089a8;font:7px "IBM Plex Mono",monospace;letter-spacing:.08em}
+.compare-matrix{min-width:970px!important;font-size:8px!important}
+.compare-matrix th{font-size:7px;white-space:nowrap}
+.compare-matrix td{font-size:8px;white-space:nowrap}
+.compare-matrix-empty{text-align:center;color:#8197b3!important;padding:20px!important}
+.compare-detail{padding:20px;border-top:1px solid rgba(134,183,228,.15);background:linear-gradient(180deg,rgba(10,20,37,.96),rgba(6,12,24,.98))}
+.compare-detail[hidden]{display:none!important}
+.compare-detail__top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;margin-bottom:17px}
+.compare-detail__identity{min-width:0}
+.compare-detail__identity small{display:block;color:#86cce9;font:7px "IBM Plex Mono",monospace;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+.compare-detail__identity h4{margin:0;color:#f1f7ff;font:700 21px/1.15 "Sora",sans-serif;letter-spacing:-.04em;overflow-wrap:anywhere}
+.compare-detail__identity p{margin:6px 0 0;color:#8299b5;font-size:9px;line-height:1.5}
+.compare-detail__top-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.compare-detail__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-bottom:13px}
+.compare-detail-card{min-width:0;padding:14px;border:1px solid rgba(133,181,225,.15);border-radius:12px;background:rgba(13,25,44,.84)}
+.compare-detail-card h5{margin:0 0 11px;color:#bcd4ea;font:800 8px "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase}
+.compare-detail-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.compare-detail-field{min-width:0}
+.compare-detail-field span{display:block;color:#7c96b3;font:7px "IBM Plex Mono",monospace;letter-spacing:.06em;text-transform:uppercase}
+.compare-detail-field strong{display:block;margin-top:4px;color:#e7f2fd;font:600 10px "IBM Plex Mono",monospace;overflow-wrap:anywhere}
+.compare-detail-field strong.sun{color:#ffd27e}.compare-detail-field strong.earth{color:#90d7ff}.compare-detail-field strong.power{color:#8de5bd}
+.compare-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:13px 0}
+.compare-chart-card{min-width:0;padding:13px;border:1px solid rgba(133,181,225,.15);border-radius:12px;background:rgba(9,18,34,.8)}
+.compare-chart-card h5{margin:0 0 8px;color:#bad1e8;font:800 8px "IBM Plex Mono",monospace;letter-spacing:.1em}
+.compare-chart-card canvas{display:block;width:100%;height:190px}
+.compare-interval-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}
+.compare-interval-card{padding:10px;border:1px solid rgba(133,181,225,.13);border-radius:9px;background:rgba(12,24,42,.74);min-width:0}
+.compare-interval-card strong{display:block;color:#cce0f2;font:700 7px "IBM Plex Mono",monospace;letter-spacing:.06em}
+.compare-interval-card span{display:block;margin-top:6px;color:#829ab7;font:7px/1.5 "IBM Plex Mono",monospace;overflow-wrap:anywhere}
+.compare-telemetry-wrap{max-height:420px;overflow:auto;border:1px solid rgba(133,181,225,.14);border-radius:10px;scrollbar-width:thin;scrollbar-color:rgba(112,160,207,.4) transparent}
+.compare-telemetry-table{width:100%;min-width:930px;border-collapse:collapse;font:7px "IBM Plex Mono",monospace}
+.compare-telemetry-table th{position:sticky;top:0;z-index:1;padding:9px 8px;background:#13243a;color:#a8c0d9;text-align:left;white-space:nowrap}
+.compare-telemetry-table td{padding:8px;border-top:1px solid rgba(134,180,224,.1);color:#cfdeee;white-space:nowrap;font-variant-numeric:tabular-nums}
+.compare-telemetry-table tr:nth-child(even) td{background:rgba(13,26,45,.4)}
+.compare-detail-section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 8px}
+.compare-detail-section-title strong{color:#c6d9eb;font:800 8px "IBM Plex Mono",monospace;letter-spacing:.13em}
+.compare-detail-section-title span{color:#7892af;font:7px "IBM Plex Mono",monospace}
+.compare-detail-slider{display:flex;align-items:center;gap:10px;margin:0 0 13px;padding:10px 12px;border:1px solid rgba(134,182,225,.13);border-radius:10px;background:rgba(8,16,30,.68)}
+.compare-detail-slider input{flex:1;min-width:0;accent-color:#8ddfff}.compare-detail-slider span{color:#8fa9c4;font:8px "IBM Plex Mono",monospace;white-space:nowrap}
+#compare.is-detail-open .compare-main{display:none}
+#compare.is-detail-open #compareMissionDetail{display:block}
+@media(max-width:1080px){.compare-cards-grid{grid-template-columns:1fr}.compare-interval-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.compare-toolbar{align-items:flex-start;flex-direction:column}.compare-toolbar-actions{width:100%;justify-content:flex-start}.mission-compare-card__actions{flex-wrap:wrap}.compare-detail__top{flex-direction:column}.compare-detail__top-actions{justify-content:flex-start}.compare-detail__grid,.compare-chart-grid{grid-template-columns:1fr}.compare-detail-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.compare-detail{padding:13px}.compare-interval-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.compare-chart-card canvas{height:170px}}
+@media(prefers-reduced-motion:reduce){.mission-compare-card{transition:none}}
+</style>
+
 </head>
 <body>
 <div class="cosmic-atmosphere" aria-hidden="true"><div class="cosmic-nebula"></div><div class="cosmic-stars cosmic-stars--near"></div><div class="cosmic-stars cosmic-stars--far"></div><div class="cosmic-orbit-grid"></div><div class="cosmic-light-sweep"></div></div>
@@ -1213,7 +1511,25 @@ body {
         <summary class="mission-foldout__summary"><span class="foldout-number">03</span><span class="foldout-copy"><strong>Scenario lab</strong><small>Compare landing sites and discover alternative polar locations</small></span><span class="foldout-action">OPEN PANEL <b>＋</b></span></summary>
         <div class="mission-foldout__content">
       <div class="bottom-grid">
-        <section class="panel" id="compare"><div class="panel-head"><h3>Scenario comparison</h3><small>UP TO 3 SITES / DATES</small></div><div class="panel-body"><div id="compareList" class="compare-list"><div class="compare-empty">Add this scenario, then try another landing site or date.</div></div><div class="table-wrap" style="margin-top:13px"><table class="data-table"><thead><tr><th>Scenario</th><th>Sun visible</th><th>Earth · disk</th><th>Max W/m²</th></tr></thead><tbody id="compareTable"><tr><td colspan="4" style="color:#8194ad">No scenarios have been compared yet.</td></tr></tbody></table></div><div class="btn-row" style="margin-top:10px"><button id="clearCompare" class="btn small ghost">Clear comparison</button><button id="exportCompare" class="btn small ghost">Export CSV</button></div></div></section>
+        <section class="panel" id="compare">
+  <div class="panel-head"><h3>Mission comparison studio</h3><small>UP TO 4 MISSIONS · INDIVIDUAL 3D VIEWS</small></div>
+  <div class="panel-body compare-main" id="compareMain">
+    <div class="compare-toolbar">
+      <div><strong id="compareCount">00 / 04 MISSIONS STORED</strong><small>Save each analysed site/date as an independent mission snapshot.</small></div>
+      <div class="btn-row compare-toolbar-actions">
+        <button id="compareAddCurrent" class="btn primary small" type="button">＋ Add active mission</button>
+        <button id="clearCompare" class="btn small ghost" type="button">Clear all</button>
+        <button id="exportCompare" class="btn small ghost" type="button">Export CSV</button>
+      </div>
+    </div>
+    <div id="compareList" class="compare-cards-grid"><div class="compare-empty compare-empty--studio"><strong>Your comparison board is empty.</strong><span>Analyse a mission, then choose “Add to comparison”. You can keep up to four independent mission runs here.</span></div></div>
+    <div class="compare-matrix-wrap">
+      <div class="compare-matrix-title"><strong>MISSION COMPARISON MATRIX</strong><span>WINDOW TOTALS / PEAK VALUES</span></div>
+      <div class="table-wrap"><table class="data-table compare-matrix"><thead><tr><th>Mission</th><th>Site</th><th>Start · UTC</th><th>Sun center / disk</th><th>Earth center / disk</th><th>Peak Sun</th><th>Peak Earth</th><th>Peak array</th><th>Data</th></tr></thead><tbody id="compareTable"><tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr></tbody></table></div>
+    </div>
+  </div>
+  <div id="compareMissionDetail" class="compare-detail" hidden></div>
+</section>
         <section class="panel" id="explorer"><div class="panel-head"><h3>Candidate explorer</h3><small>POLAR REGION · RAPID SCREENING</small></div><div class="panel-body"><p class="inline-note" style="margin-top:0">Scan a coordinate grid across the polar region and rank candidate sites by geometric conditions. Results inherit the quality and coverage of the loaded dataset.</p><div class="search-controls"><div class="field"><label for="minSun">Sun center visible (h)</label><input id="minSun" type="number" min="0" max="72" value="8"></div><div class="field"><label for="minEarth">Earth disk visible (h)</label><input id="minEarth" type="number" min="0" max="72" value="4"></div><div class="field"><label for="maxLat">Northern latitude limit (°)</label><input id="maxLat" type="number" min="-89" max="-70" value="-85"></div><div class="field"><label for="gridStep">Grid spacing (°)</label><select id="gridStep"><option value="2">2° · fine</option><option value="5" selected>5° · standard</option><option value="10">10° · fast</option></select></div></div><button id="searchCandidates" class="btn primary full" style="margin-top:10px">⌕ Find candidate sites</button><div id="searchResults" class="search-results"><div class="compare-empty" style="grid-column:1/-1">Run the screening analysis to discover alternatives near the lunar south pole.</div></div></div></section>
       </div>
         </div>
@@ -1229,6 +1545,186 @@ body {
   </div>
   <div class="footer">LUNARA · Lunar mission planning prototype · Not a certified flight engineering system.</div>
 </div>
+
+
+<script id="lunara-persistent-workspace-controller">
+(() => {
+  const app = document.querySelector('.app');
+  const workspace = document.getElementById('workspace');
+  if (!app || !workspace || document.getElementById('novaViewOverlay')) return;
+
+  const topbar = app.querySelector('.topbar');
+  const oldHero = app.querySelector('.hero');
+  const oldNav = app.querySelector('.mission-nav');
+  const aside = workspace.querySelector(':scope > aside.panel');
+  const main = workspace.querySelector(':scope > main.content');
+  if (!topbar || !aside || !main) return;
+
+  const visualIntro = main.querySelector('.visual-intro');
+  const visuals = main.querySelector('#visuals');
+  const kpis = main.querySelector('.kpis');
+  const telemetryFold = main.querySelector('#telemetryFold');
+  const scenarioFold = main.querySelector('#scenarioFold');
+  const integrityFold = main.querySelector('#integrityFold');
+  const telemetryBody = telemetryFold?.querySelector('.mission-foldout__content');
+  const compare = scenarioFold?.querySelector('#compare');
+  const explorer = scenarioFold?.querySelector('#explorer');
+  const science = integrityFold?.querySelector('#science');
+  const timeControl = telemetryBody?.querySelector('.time-control');
+
+  const observatory = document.createElement('section');
+  observatory.className = 'nova-observatory';
+  observatory.setAttribute('aria-label', 'Persistent 3D lunar observatory');
+  observatory.innerHTML = `
+    <div class="nova-observatory-head">
+      <div><div class="nova-overline"><i class="nova-live-dot"></i> LIVE MISSION OBSERVATORY</div><h2 class="nova-observatory-title">The lunar theatre</h2></div>
+      <span class="nova-stage-tag">3D / ALWAYS ON</span>
+    </div>`;
+  if (visualIntro) visualIntro.remove();
+  if (visuals) observatory.appendChild(visuals);
+
+  const command = document.createElement('main');
+  command.className = 'nova-command';
+  const head = document.createElement('header');
+  head.className = 'nova-command-head';
+  head.innerHTML = `<div class="nova-command-kicker">LUNARA / MISSION WORKSPACE</div><h1>Make the next lunar window <em>visible.</em></h1><p>Keep the lunar environment in view while opening focused workspaces for mission setup, telemetry, comparisons and scientific traceability.</p>`;
+
+  const activeScenario = document.createElement('div');
+  activeScenario.className = 'nova-active-scenario';
+  activeScenario.innerHTML = `<div><small>ACTIVE SCENARIO</small><strong></strong></div><span class="nova-coordinate-tag"></span>`;
+  const activeName = activeScenario.querySelector('strong');
+  const activeCoords = activeScenario.querySelector('.nova-coordinate-tag');
+  const syncActiveScenario = () => {
+    const name = document.getElementById('siteName');
+    const lat = document.getElementById('lat');
+    const lon = document.getElementById('lon');
+    activeName.textContent = name?.value || 'Untitled scenario';
+    activeCoords.textContent = `${Number(lat?.value || 0).toFixed(2)}° / ${Number(lon?.value || 0).toFixed(2)}°`;
+  };
+
+  const metricsLabel = document.createElement('div');
+  metricsLabel.className = 'nova-section-label';
+  metricsLabel.innerHTML = `<strong>LIVE READOUT</strong><span>SELECTED UTC SAMPLE</span>`;
+  if (kpis) command.appendChild(head);
+  command.appendChild(activeScenario);
+  command.appendChild(metricsLabel);
+  if (kpis) command.appendChild(kpis);
+  if (timeControl) {
+    const timeCard = document.createElement('section');
+    timeCard.className = 'nova-time-card';
+    timeCard.innerHTML = `<div class="nova-time-card-head"><strong>TIME SCRUBBER</strong><span>UTC / WINDOW</span></div>`;
+    timeCard.appendChild(timeControl);
+    command.appendChild(timeCard);
+  }
+
+  const launchers = document.createElement('section');
+  launchers.className = 'nova-workspaces';
+  launchers.innerHTML = `
+    <div class="nova-section-label"><strong>MISSION WORKSPACES</strong><span>OPEN A FOCUSED VIEW</span></div>
+    <div class="nova-workspace-grid">
+      <button class="nova-launcher" type="button" data-open-view="setup"><span class="nova-launcher-icon">⌘</span><span class="nova-launcher-copy"><strong>Mission setup</strong><small>Site · date · solar array · SPICE / terrain</small></span><span class="nova-launcher-arrow">↗</span></button>
+      <button class="nova-launcher" type="button" data-open-view="telemetry"><span class="nova-launcher-icon">⌁</span><span class="nova-launcher-copy"><strong>Telemetry</strong><small>Sun / Earth geometry · elevation · windows</small></span><span class="nova-launcher-arrow">↗</span></button>
+      <button class="nova-launcher nova-launcher--compare" type="button" data-open-view="comparison"><span class="nova-launcher-icon">⇄</span><span class="nova-launcher-copy"><strong>Scenario comparison lab</strong><small>Open a dedicated analysis screen · compare up to four missions with independent 3D views and telemetry</small></span><span class="nova-launcher-arrow">↗</span></button>
+      <button class="nova-launcher" type="button" data-open-view="explorer"><span class="nova-launcher-icon">⌖</span><span class="nova-launcher-copy"><strong>Polar site explorer</strong><small>Search candidate landing locations</small></span><span class="nova-launcher-arrow">↗</span></button>
+      <button class="nova-launcher" type="button" data-open-view="science"><span class="nova-launcher-icon">∿</span><span class="nova-launcher-copy"><strong>Model integrity</strong><small>Data sources · assumptions · limitations</small></span><span class="nova-launcher-arrow">↗</span></button>
+    </div>`;
+  command.appendChild(launchers);
+  const foot = document.createElement('div');
+  foot.className = 'nova-command-foot';
+  foot.innerHTML = `<span>3D OBSERVATORY PERSISTENT</span><span>MISSION INTELLIGENCE / 01</span>`;
+  command.appendChild(foot);
+
+  workspace.replaceChildren(observatory, command);
+  workspace.classList.remove('grid');
+  workspace.classList.add('nova-grid');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'nova-view-overlay';
+  overlay.id = 'novaViewOverlay';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.setAttribute('role', 'presentation');
+  const viewsHost = document.createElement('div');
+  viewsHost.className = 'nova-view-host';
+  viewsHost.style.cssText = 'display:flex;flex:1;min-width:0;min-height:0;width:100%;height:100%';
+  overlay.appendChild(viewsHost);
+
+  const viewDefinitions = [
+    ['setup', 'Mission setup', 'Configure the active site, planning window, solar array and scientific data.', aside],
+    ['telemetry', 'Mission telemetry', 'Inspect solar and Earth geometry, elevation curves and opportunity windows.', telemetryBody],
+    ['comparison', 'Scenario comparison lab', 'A dedicated workspace for comparing saved landing-site and date scenarios.', compare],
+    ['explorer', 'Polar site explorer', 'Screen candidate locations using the currently loaded ephemeris and geometric filters.', explorer],
+    ['science', 'Model integrity', 'Understand provenance, assumptions and scientific limitations behind the results.', science]
+  ];
+  const viewMap = new Map();
+  for (const [key, title, subtitle, content] of viewDefinitions) {
+    if (!content) continue;
+    const view = document.createElement('section');
+    view.className = 'nova-view';
+    view.dataset.view = key;
+    const header = document.createElement('header');
+    header.className = 'nova-view-header';
+    const copy = document.createElement('div');
+    copy.innerHTML = `<div class="nova-view-overline">LUNARA / WORKSPACE</div><h2>${title}</h2><p>${subtitle}</p>`;
+    const close = document.createElement('button');
+    close.type = 'button'; close.className = 'nova-close'; close.innerHTML = `<span>←</span> BACK TO OBSERVATORY`;
+    close.addEventListener('click', closeView);
+    header.append(copy, close);
+    const scroll = document.createElement('div');
+    scroll.className = 'nova-view-scroll';
+    if (key === 'telemetry') {
+      // Keep the original metric cards, chart and visibility timeline together.
+      scroll.appendChild(content);
+    } else {
+      scroll.appendChild(content);
+    }
+    view.append(header, scroll);
+    viewsHost.appendChild(view);
+    viewMap.set(key, view);
+  }
+  app.appendChild(overlay);
+
+  // Remove superseded wrappers only after their functional children have been moved.
+  telemetryFold?.remove();
+  scenarioFold?.remove();
+  integrityFold?.remove();
+  main.remove();
+  // The original controls aside has already been moved into the Setup view.
+  oldHero?.remove();
+  if (oldNav) oldNav.setAttribute('aria-hidden', 'true');
+
+  let activeLauncher = null;
+  function openView(key, launcher) {
+    const view = viewMap.get(key);
+    if (!view) return;
+    for (const v of viewMap.values()) v.classList.toggle('is-active', v === view);
+    overlay.classList.add('is-open');
+    overlay.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('nova-view-open');
+    activeLauncher = launcher || null;
+    overlay.querySelector('.nova-close')?.focus({preventScroll:true});
+  }
+  function closeView() {
+    overlay.classList.remove('is-open');
+    overlay.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('nova-view-open');
+    for (const v of viewMap.values()) v.classList.remove('is-active');
+    activeLauncher?.focus?.({preventScroll:true});
+    activeLauncher = null;
+  }
+  launchers.querySelectorAll('[data-open-view]').forEach(button => {
+    button.addEventListener('click', () => openView(button.dataset.openView, button));
+  });
+  overlay.addEventListener('click', event => { if (event.target === overlay) closeView(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && overlay.classList.contains('is-open')) closeView(); });
+
+  syncActiveScenario();
+  document.getElementById('siteName')?.addEventListener('input', syncActiveScenario);
+  document.getElementById('lat')?.addEventListener('input', syncActiveScenario);
+  document.getElementById('lon')?.addEventListener('input', syncActiveScenario);
+  document.getElementById('preset')?.addEventListener('change', () => requestAnimationFrame(syncActiveScenario));
+  document.getElementById('calculate')?.addEventListener('click', () => requestAnimationFrame(syncActiveScenario));
+})();
+</script>
 
 <script type="module">
 let THREE = null;
@@ -1545,16 +2041,235 @@ function createFallbackVisuals(){
 }
 
 // -----------------------------------------------------------------------------
-// Scenario comparison and candidate explorer.
+// Mission comparison studio: independent snapshots, 4 slots, 3D previews and telemetry.
 // -----------------------------------------------------------------------------
-function scenarioRecord(site,data,summary,startMs,hours){return {site:{...site},data,summary,startMs,hours,mode:dataMode};}
-function addCurrentComparison(){if(!currentScenario)return;const key=currentScenario.site.name+'|'+currentScenario.site.lat+'|'+currentScenario.site.lon+'|'+currentScenario.startMs;if(comparison.some(c=>c.key===key)){showNotice('This scenario is already in the comparison.','warn');return;}if(comparison.length>=3)comparison.shift();comparison.push({...scenarioRecord(currentScenario.site,rows,currentScenario.summary,currentScenario.startMs,currentScenario.hours),key});renderComparison();showNotice('Scenario added to comparison.','good');}
-function renderComparison(){
-  if(!comparison.length){$('compareList').innerHTML='<div class="compare-empty">Add this scenario, then try another landing site or date.</div>';$('compareTable').innerHTML='<tr><td colspan="4" style="color:#8194ad">No scenarios have been compared yet.</td></tr>';return;}
-  $('compareList').innerHTML=comparison.map((c,i)=>`<div class="compare-item"><div><strong>${escapeHtml(c.site.name)}</strong><small>${number(c.site.lat,3)}°, ${number(c.site.lon,3)}° · ${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</small></div><button class="btn small ghost" data-remove="${i}">Remove</button></div>`).join('');
-  $('compareTable').innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td class="num">${fmtHours(c.summary.sunCenter*60)}</td><td class="num">${fmtHours(c.summary.earthLimb*60)}</td><td class="num">${number(c.summary.maxPower.output,0)}</td></tr>`).join('');
-  $('compareList').querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{comparison.splice(Number(b.dataset.remove),1);renderComparison()}));
+let comparisonCounter = 0;
+const comparisonIndices = new Map();
+const comparisonScenes = new Map();
+
+function scenarioRecord(site,data,summary,startMs,hours){
+  const terrainApplied = !!(horizonProfile && horizonProfileSite &&
+    Math.abs(site.lat-horizonProfileSite.lat)<1e-5 && Math.abs(site.lon-horizonProfileSite.lon)<1e-5);
+  const stepSeconds = data.length>1 ? (data[1].sec-data[0].sec) : 0;
+  return {id:++comparisonCounter,site:{...site},data:data.map(r=>({...r,sun:{...r.sun},earth:{...r.earth}})),summary,startMs,hours,mode:dataMode,meta:ephemeris?.meta ? {...ephemeris.meta} : null,terrainApplied,stepSeconds};
 }
+function comparisonKey(record){
+  const s=record.site;
+  return [s.name,s.lat,s.lon,s.alt,s.tilt,s.panelAz,s.efficiency,record.startMs,record.hours,record.mode].join('|');
+}
+function addCurrentComparison(){
+  if(!currentScenario || !rows.length){showNotice('Run an analysis before adding this mission to the comparison.','warn');return;}
+  if(comparison.length>=4){showNotice('The comparison board is full (4 of 4). Remove a mission before adding another.','warn');return;}
+  const record=scenarioRecord(currentScenario.site,rows,currentScenario.summary,currentScenario.startMs,currentScenario.hours);
+  record.key=comparisonKey(record);
+  if(comparison.some(c=>c.key===record.key)){showNotice('This exact mission configuration is already in the comparison. Change its site, date or array settings to add a different run.','warn');return;}
+  comparison.push(record);
+  comparisonIndices.set(record.id,Math.floor((record.data.length-1)/2));
+  renderComparison();
+  showNotice(`Mission ${comparison.length}/4 saved to the comparison studio. Its telemetry is stored independently of the active mission.`,'good');
+}
+
+function comparisonViewVisible(){
+  const overlay=document.getElementById('novaViewOverlay');
+  const view=document.querySelector('.nova-view[data-view="comparison"]');
+  return !!(overlay?.classList.contains('is-open') && view?.classList.contains('is-active'));
+}
+function disposeComparisonScenes(){
+  for(const entry of comparisonScenes.values()){
+    try{if(entry.dispose)entry.dispose();else{entry.ro?.disconnect();entry.renderer?.setAnimationLoop(null);entry.renderer?.dispose();entry.renderer?.domElement?.remove();}}catch(e){console.warn('Could not dispose comparison preview:',e);}
+  }
+  comparisonScenes.clear();
+}
+function compareScenePosition(target,azimuth,elevation,radius){
+  const az=azimuth*Math.PI/180,el=elevation*Math.PI/180;
+  target.position.set(Math.sin(az)*Math.cos(el)*radius,Math.sin(el)*radius+0.5,-Math.cos(az)*Math.cos(el)*radius);
+}
+function createComparison3D(host,record,row){
+  if(!THREE || !host)return null;
+  const scene=new THREE.Scene();scene.background=new THREE.Color(0x071321);
+  const camera=new THREE.PerspectiveCamera(48,1,.1,180);camera.position.set(0,11,35);camera.lookAt(0,7,0);
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.35));renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.domElement.setAttribute('aria-label',`3D local sky preview for ${record.site.name}`);
+  renderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%;display:block';
+  host.appendChild(renderer.domElement);
+  scene.add(new THREE.AmbientLight(0xffffff,.8));
+  const ground=new THREE.Mesh(new THREE.CircleGeometry(30,96),new THREE.MeshStandardMaterial({color:0x252f3c,roughness:1,metalness:.04}));
+  ground.rotation.x=-Math.PI/2;ground.position.y=-.55;scene.add(ground);
+  const horizon=new THREE.Mesh(new THREE.TorusGeometry(29.5,.105,5,120),new THREE.MeshBasicMaterial({color:0x4aabbd,transparent:true,opacity:.65}));
+  horizon.rotation.x=Math.PI/2;horizon.position.y=-.45;scene.add(horizon);
+  // Atmospheric star field and a subtle local meridian grid.
+  const starGeometry=new THREE.BufferGeometry(),starPositions=[];
+  for(let i=0;i<420;i++){
+    const a=Math.random()*Math.PI*2, y=3+Math.random()*45, r=42+Math.random()*34;
+    starPositions.push(Math.cos(a)*r,y,Math.sin(a)*r);
+  }
+  starGeometry.setAttribute('position',new THREE.Float32BufferAttribute(starPositions,3));
+  scene.add(new THREE.Points(starGeometry,new THREE.PointsMaterial({color:0xd9eaff,size:.65,transparent:true,opacity:.78})));
+  const guideMat=new THREE.LineBasicMaterial({color:0x47748b,transparent:true,opacity:.20});
+  for(let x=-20;x<=20;x+=10){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,-.38,-24),new THREE.Vector3(x,-.38,24)]);scene.add(new THREE.Line(g,guideMat));}
+  const sun=new THREE.Mesh(new THREE.SphereGeometry(1.28,24,18),new THREE.MeshBasicMaterial({color:0xffc66d}));
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(1.48,28,20),new THREE.MeshStandardMaterial({color:0x3c9cdb,emissive:0x102f5b,roughness:.75}));
+  scene.add(sun,earth);
+  const sunHalo=new THREE.Mesh(new THREE.SphereGeometry(1.8,20,16),new THREE.MeshBasicMaterial({color:0xffbd62,transparent:true,opacity:.13,side:THREE.BackSide}));scene.add(sunHalo);
+  const earthHalo=new THREE.Mesh(new THREE.SphereGeometry(1.98,20,16),new THREE.MeshBasicMaterial({color:0x4baeff,transparent:true,opacity:.12,side:THREE.BackSide}));scene.add(earthHalo);
+  const sunLabel=makeLabelSprite('SUN','#ffd27a');sunLabel.scale.set(5.5,1.55,1);scene.add(sunLabel);
+  const earthLabel=makeLabelSprite('EARTH','#81d4ff');earthLabel.scale.set(6.5,1.55,1);scene.add(earthLabel);
+  const siteMarker=new THREE.Mesh(new THREE.SphereGeometry(.23,12,10),new THREE.MeshBasicMaterial({color:0x78e8bd}));siteMarker.position.set(0,-.32,0);scene.add(siteMarker);
+  function update(nextRow){
+    if(!nextRow)return;
+    compareScenePosition(sun,nextRow.sun.azimuth,nextRow.sun.elevation,19);
+    compareScenePosition(earth,nextRow.earth.azimuth,nextRow.earth.elevation,21);
+    sunHalo.position.copy(sun.position);earthHalo.position.copy(earth.position);
+    sunLabel.position.copy(sun.position).add(new THREE.Vector3(0,2.3,0));
+    earthLabel.position.copy(earth.position).add(new THREE.Vector3(0,2.5,0));
+    sun.visible=!!nextRow.sun.limbVisible;sunHalo.visible=sun.visible;sunLabel.visible=sun.visible;
+    earth.visible=!!nextRow.earth.limbVisible;earthHalo.visible=earth.visible;earthLabel.visible=earth.visible;
+  }
+  const resize=()=>{const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);};
+  const ro=new ResizeObserver(resize);ro.observe(host);resize();update(row);
+  let spin=0;renderer.setAnimationLoop(()=>{spin+=.001;sun.rotation.y+=.0012;earth.rotation.y+=.0011;renderer.render(scene,camera);});
+  const dispose=()=>{ro.disconnect();renderer.setAnimationLoop(null);scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map)m.map.dispose();m.dispose();});}});renderer.dispose();renderer.domElement.remove();};
+  return {renderer,update,dispose};
+}
+function ensureComparisonScenes(){
+  if(!comparisonViewVisible() || !comparison.length)return;
+  for(const record of comparison){
+    const host=document.querySelector(`[data-compare-preview="${record.id}"]`);
+    if(!host)continue;
+    const existing=comparisonScenes.get(record.id);
+    if(existing && existing.host===host)continue;
+    existing?.dispose?.();
+    const idx=comparisonIndices.get(record.id)??Math.floor((record.data.length-1)/2);
+    const row=record.data[Math.max(0,Math.min(record.data.length-1,idx))];
+    const scene=createComparison3D(host,record,row);
+    if(scene)comparisonScenes.set(record.id,{...scene,host});
+  }
+}
+function selectedComparisonRow(record){
+  const idx=comparisonIndices.get(record.id)??Math.floor((record.data.length-1)/2);
+  return {idx,row:record.data[Math.max(0,Math.min(record.data.length-1,idx))]};
+}
+function updateComparisonCard(record,index){
+  const idx=clamp(Number(index)||0,0,record.data.length-1);comparisonIndices.set(record.id,idx);
+  const row=record.data[idx],scene=comparisonScenes.get(record.id);
+  scene?.update?.(row);
+  const root=document.querySelector(`[data-compare-card="${record.id}"]`);if(!root)return;
+  const time=root.querySelector('[data-compare-time]');if(time)time.textContent=isoAt(row.dateMs).replace(' UTC','');
+  const readout=root.querySelector('[data-compare-readout]');if(readout)readout.innerHTML=`<span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span>`;
+}
+function renderComparison(){
+  const count=document.getElementById('compareCount');
+  if(count)count.textContent=`${String(comparison.length).padStart(2,'0')} / 04 MISSIONS STORED`;
+  disposeComparisonScenes();
+  const list=$('compareList'),body=$('compareTable');
+  if(!comparison.length){
+    list.innerHTML='<div class="compare-empty compare-empty--studio"><strong>Your comparison board is empty.</strong><span>Analyse a mission, then choose “Add to comparison”. You can keep up to four independent mission runs here.</span></div>';
+    body.innerHTML='<tr><td colspan="9" class="compare-matrix-empty">No missions saved yet.</td></tr>';
+    $('compare').classList.remove('is-detail-open');$('compareMissionDetail').hidden=true;$('compareMissionDetail').innerHTML='';
+    return;
+  }
+  list.innerHTML=comparison.map((c,i)=>{
+    const idx=comparisonIndices.get(c.id)??Math.floor((c.data.length-1)/2),row=c.data[idx];
+    const mode=c.mode==='spice'?'SPICE / REAL':'DEMO / SYNTHETIC';
+    const kernel=c.meta?.ephemeris_kernel||'synthetic vectors';
+    return `<article class="mission-compare-card" data-compare-card="${c.id}">
+      <div class="mission-compare-card__head"><span class="mission-compare-card__index">M${String(i+1).padStart(2,'0')}</span><div class="mission-compare-card__identity"><strong title="${escapeHtml(c.site.name)}">${escapeHtml(c.site.name)}</strong><small>${escapeHtml(mode)} · ${escapeHtml(kernel)}</small></div><button class="mission-compare-card__remove" type="button" data-remove="${c.id}" aria-label="Remove ${escapeHtml(c.site.name)}">×</button></div>
+      <div class="compare-preview"><div class="compare-preview__tag">LOCAL SKY / 3D · SCHEMATIC HORIZON</div><div class="compare-preview__quality">${c.mode==='spice'?'SPICE':'DEMO'} · ${c.data.length} SAMPLES</div><div data-compare-preview="${c.id}" style="position:absolute;inset:0"></div><div class="compare-preview__readout" data-compare-readout><span><b>SUN</b> ${number(row.sun.elevation,1)}° / ${number(row.sun.azimuth,0)}°</span><span><b>EARTH</b> ${number(row.earth.elevation,1)}° / ${number(row.earth.azimuth,0)}°</span></div></div>
+      <div class="compare-card-scrubber"><input type="range" min="0" max="${c.data.length-1}" value="${idx}" data-compare-slider="${c.id}" aria-label="Select mission time for ${escapeHtml(c.site.name)}"><span data-compare-time>${isoAt(row.dateMs).replace(' UTC','')}</span></div>
+      <div class="compare-card-kpis"><div class="compare-card-kpi"><span>Sun disk visible</span><strong>${fmtHours(c.summary.sunLimb*60)}</strong></div><div class="compare-card-kpi"><span>Earth disk visible</span><strong>${fmtHours(c.summary.earthLimb*60)}</strong></div><div class="compare-card-kpi"><span>Peak array · est.</span><strong>${number(c.summary.maxPower.output,0)} W/m²</strong></div></div>
+      <div class="mission-compare-card__meta"><span>${number(c.site.lat,3)}° / ${number(c.site.lon,3)}°</span><span>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')} UTC</span><span>${c.hours} H WINDOW</span><span>${c.terrainApplied?'HORIZON MASK':'FLAT HORIZON'}</span></div>
+      <div class="mission-compare-card__actions"><button class="btn primary small" type="button" data-details="${c.id}">View telemetry & details ↗</button></div>
+    </article>`;
+  }).join('');
+  body.innerHTML=comparison.map(c=>`<tr><td>${escapeHtml(c.site.name)}</td><td>${number(c.site.lat,2)}° / ${number(c.site.lon,2)}°</td><td>${new Date(c.startMs).toISOString().slice(0,16).replace('T',' ')}</td><td>${fmtHours(c.summary.sunCenter*60)} / ${fmtHours(c.summary.sunLimb*60)}</td><td>${fmtHours(c.summary.earthCenter*60)} / ${fmtHours(c.summary.earthLimb*60)}</td><td>${number(c.summary.maxSun.sun.elevation,1)}°</td><td>${number(c.summary.maxEarth.earth.elevation,1)}°</td><td>${number(c.summary.maxPower.output,0)} W/m²</td><td>${c.mode==='spice'?'SPICE':'DEMO'}</td></tr>`).join('');
+  list.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{
+    const id=Number(b.dataset.remove),entry=comparisonScenes.get(id);entry?.dispose?.();comparisonScenes.delete(id);
+    const index=comparison.findIndex(c=>c.id===id);if(index>=0)comparison.splice(index,1);comparisonIndices.delete(id);renderComparison();
+  }));
+  list.querySelectorAll('[data-compare-slider]').forEach(input=>input.addEventListener('input',()=>{
+    const record=comparison.find(c=>c.id===Number(input.dataset.compareSlider));if(record)updateComparisonCard(record,input.value);
+  }));
+  list.querySelectorAll('[data-details]').forEach(button=>button.addEventListener('click',()=>openComparisonDetails(Number(button.dataset.details))));
+  if(comparisonViewVisible())requestAnimationFrame(()=>ensureComparisonScenes());
+}
+function formatMissionUtc(sec){return new Date(J2000_MS+sec*1000).toISOString().replace('T',' ').slice(0,19)+' UTC';}
+function intervalDetailHtml(label,intervals,color){
+  const items=intervals||[];
+  const content=items.length?items.map((it,i)=>`<span>${String(i+1).padStart(2,'0')} · ${formatMissionUtc(it.start).slice(11,16)} — ${formatMissionUtc(it.end).slice(11,16)} UTC (${fmtHours(it.minutes)})</span>`).join(''):'<span>No visible interval in this analysis window.</span>';
+  return `<div class="compare-interval-card" style="border-top:2px solid ${color}"><strong>${label}</strong>${content}</div>`;
+}
+function drawMissionLineChart(canvas,data,series,range){
+  if(!canvas||!data?.length)return;
+  const rect=canvas.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,1.5),w=Math.max(320,Math.floor(rect.width||canvas.clientWidth||520)),h=Math.max(150,Math.floor(rect.height||190));
+  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const pad={l:43,r:12,t:12,b:27},min=range?.min??Math.min(...series.flatMap(s=>data.map(r=>s.get(r)))) ,max=range?.max??Math.max(...series.flatMap(s=>data.map(r=>s.get(r))));
+  const span=Math.max(1e-6,max-min),x=i=>pad.l+(i/Math.max(1,data.length-1))*(w-pad.l-pad.r),y=v=>pad.t+(1-(v-min)/span)*(h-pad.t-pad.b);
+  ctx.font='8px "IBM Plex Mono",monospace';ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let k=0;k<=4;k++){const value=min+span*k/4,yy=y(value);ctx.strokeStyle='rgba(134,174,213,.16)';ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(w-pad.r,yy);ctx.stroke();ctx.fillStyle='#7f97b4';ctx.fillText(value.toFixed(range?.digits??1),pad.l-6,yy);}
+  ctx.textAlign='center';ctx.textBaseline='top';for(let k=0;k<=4;k++){const idx=Math.round((data.length-1)*k/4);const elapsed=(data[idx].sec-data[0].sec)/3600;ctx.fillStyle='#718aa8';ctx.fillText(`${elapsed.toFixed(0)}h`,x(idx),h-pad.b+7);}
+  for(const s of series){ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.beginPath();data.forEach((r,i)=>{const px=x(i),py=y(s.get(r));if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.stroke();}
+}
+function openComparisonDetails(id){
+  const c=comparison.find(x=>x.id===id);if(!c)return;
+  const root=$('compareMissionDetail'),main=$('compareMain');const {idx,row}=selectedComparisonRow(c);
+  const stepMin=c.stepSeconds/60,source=c.meta?.ephemeris_kernel||'Synthetic / demo';
+  const visibleLabel=c.mode==='spice'?'SPICE EPHEMERIS':'SYNTHETIC DEMO DATA';
+  root.hidden=false;$('compare').classList.add('is-detail-open');
+  root.innerHTML=`<div class="compare-detail__top"><div class="compare-detail__identity"><small>MISSION DETAIL / ${visibleLabel}</small><h4>${escapeHtml(c.site.name)}</h4><p>${number(c.site.lat,4)}° latitude · ${number(c.site.lon,4)}° longitude · ${c.hours} h mission window · ${new Date(c.startMs).toISOString().replace('T',' ').slice(0,16)} UTC</p></div><div class="compare-detail__top-actions"><button type="button" class="btn small ghost" data-detail-export="json">Export mission JSON</button><button type="button" class="btn small ghost" data-detail-export="csv">Export telemetry CSV</button><button type="button" class="btn small primary" id="backToComparison">← All missions</button></div></div>
+    <div class="compare-detail-slider"><strong>TIME</strong><input id="detailMissionSlider" type="range" min="0" max="${c.data.length-1}" value="${idx}"><span id="detailMissionTime">${isoAt(row.dateMs)}</span></div>
+    <div class="compare-detail__grid">
+      <section class="compare-detail-card"><h5>01 / Mission configuration</h5><div class="compare-detail-fields">
+        <div class="compare-detail-field"><span>Landing site</span><strong>${escapeHtml(c.site.name)}</strong></div><div class="compare-detail-field"><span>Coordinates</span><strong>${number(c.site.lat,4)}° / ${number(c.site.lon,4)}°</strong></div>
+        <div class="compare-detail-field"><span>Altitude</span><strong>${number(c.site.alt,3)} km</strong></div><div class="compare-detail-field"><span>Mission start</span><strong>${new Date(c.startMs).toISOString().slice(0,16)} UTC</strong></div>
+        <div class="compare-detail-field"><span>Analysis duration</span><strong>${c.hours} h</strong></div><div class="compare-detail-field"><span>Sample spacing</span><strong>${number(stepMin,1)} min</strong></div>
+        <div class="compare-detail-field"><span>Solar array tilt / azimuth</span><strong>${number(c.site.tilt,1)}° / ${number(c.site.panelAz,1)}°</strong></div><div class="compare-detail-field"><span>Panel efficiency</span><strong>${number(c.site.efficiency,1)}%</strong></div>
+        <div class="compare-detail-field"><span>Source</span><strong>${escapeHtml(source)}</strong></div><div class="compare-detail-field"><span>Horizon model</span><strong>${c.terrainApplied?'Local horizon profile':'Flat 0° horizon'}</strong></div>
+      </div></section>
+      <section class="compare-detail-card"><h5>02 / Selected UTC telemetry</h5><div class="compare-detail-fields">
+        <div class="compare-detail-field"><span>Sun elevation / azimuth</span><strong class="sun">${number(row.sun.elevation,3)}° / ${number(row.sun.azimuth,3)}°</strong></div><div class="compare-detail-field"><span>Earth elevation / azimuth</span><strong class="earth">${number(row.earth.elevation,3)}° / ${number(row.earth.azimuth,3)}°</strong></div>
+        <div class="compare-detail-field"><span>Sun center / disk</span><strong>${row.sun.centerVisible?'Center visible':'Center below'} / ${row.sun.limbVisible?'Limb visible':'Disk hidden'}</strong></div><div class="compare-detail-field"><span>Earth center / disk</span><strong>${row.earth.centerVisible?'Center visible':'Center below'} / ${row.earth.limbVisible?'Limb visible':'Disk hidden'}</strong></div>
+        <div class="compare-detail-field"><span>Earth distance</span><strong>${number(row.earth.distance,2)} km</strong></div><div class="compare-detail-field"><span>One-way light time</span><strong>${number(row.earth.distance/C_KM_S,3)} s</strong></div>
+        <div class="compare-detail-field"><span>Incident irradiance</span><strong class="power">${number(row.irradiance,2)} W/m²</strong></div><div class="compare-detail-field"><span>Estimated array output</span><strong class="power">${number(row.output,2)} W/m²</strong></div>
+        <div class="compare-detail-field"><span>Round-trip propagation</span><strong>${number(row.roundTrip,3)} s</strong></div><div class="compare-detail-field"><span>Sun / Earth horizon</span><strong>${number(row.sun.horizon,2)}° / ${number(row.earth.horizon,2)}°</strong></div>
+      </div></section>
+    </div>
+    <div class="compare-detail-section-title"><strong>03 / FULL-WINDOW TELEMETRY</strong><span>${c.data.length} SAMPLES · ${visibleLabel}</span></div>
+    <div class="compare-chart-grid"><section class="compare-chart-card"><h5>SUN & EARTH ELEVATION / DEGREES</h5><canvas id="missionElevationChart"></canvas><div class="chart-legend"><span><i style="background:#ffc66d"></i> Sun elevation</span><span><i style="background:#69bfff"></i> Earth elevation</span></div></section><section class="compare-chart-card"><h5>ESTIMATED SOLAR ARRAY OUTPUT / W·m⁻²</h5><canvas id="missionPowerChart"></canvas><div class="chart-legend"><span><i style="background:#8ce5bd"></i> Array output</span></div></section></div>
+    <div class="compare-detail-section-title"><strong>04 / VISIBILITY WINDOWS</strong><span>LINEARLY INTERPOLATED CROSSINGS · GEOMETRIC</span></div>
+    <div class="compare-interval-grid">${intervalDetailHtml('SUN CENTER',c.summary.sunCenterIntervals,'#ffc66d')}${intervalDetailHtml('SUN DISK',c.summary.sunLimbIntervals,'#e7a94b')}${intervalDetailHtml('EARTH CENTER',c.summary.earthCenterIntervals,'#64baff')}${intervalDetailHtml('EARTH DISK',c.summary.earthLimbIntervals,'#7ad8ff')}</div>
+    <div class="compare-detail-section-title"><strong>05 / SAMPLE-BY-SAMPLE TELEMETRY</strong><span>RAW DERIVED SERIES / UTC</span></div>
+    <div class="compare-telemetry-wrap"><table class="compare-telemetry-table"><thead><tr><th>#</th><th>UTC</th><th>Sun el.</th><th>Sun az.</th><th>Earth el.</th><th>Earth az.</th><th>Earth range km</th><th>Irradiance W/m²</th><th>Array W/m²</th><th>RTT s</th></tr></thead><tbody>${c.data.map((r,i)=>`<tr><td>${i+1}</td><td>${new Date(r.dateMs).toISOString().replace('T',' ').slice(0,19)}</td><td>${number(r.sun.elevation,3)}°</td><td>${number(r.sun.azimuth,3)}°</td><td>${number(r.earth.elevation,3)}°</td><td>${number(r.earth.azimuth,3)}°</td><td>${number(r.earth.distance,2)}</td><td>${number(r.irradiance,2)}</td><td>${number(r.output,2)}</td><td>${number(r.roundTrip,3)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="status-note warn" style="margin-top:12px">Scientific note: geometric visibility uses the stored horizon mask (or a flat horizon if none was applied). Array output is a simplified irradiance × efficiency estimate. Earth visibility is not an RF link budget.</div>`;
+  root.querySelector('#backToComparison').addEventListener('click',()=>{root.hidden=true;$('compare').classList.remove('is-detail-open');});
+  root.querySelectorAll('[data-detail-export]').forEach(b=>b.addEventListener('click',()=>exportComparisonMission(c,b.dataset.detailExport)));
+  const slider=root.querySelector('#detailMissionSlider');
+  slider.addEventListener('input',()=>{
+    const index=Number(slider.value);comparisonIndices.set(c.id,index);const selected=c.data[index];
+    root.querySelector('#detailMissionTime').textContent=isoAt(selected.dateMs);
+    updateDetailSelectedTelemetry(root,c,selected);
+  });
+  const elevationCanvas=root.querySelector('#missionElevationChart'),powerCanvas=root.querySelector('#missionPowerChart');
+  drawMissionLineChart(elevationCanvas,c.data,[{get:r=>r.sun.elevation,color:'#ffc66d'},{get:r=>r.earth.elevation,color:'#69bfff'}],{min:-90,max:90,digits:0});
+  const maxOutput=Math.max(1,...c.data.map(r=>r.output));
+  drawMissionLineChart(powerCanvas,c.data,[{get:r=>r.output,color:'#8ce5bd'}],{min:0,max:maxOutput*1.1,digits:0});
+}
+function updateDetailSelectedTelemetry(root,c,row){
+  const fields=root.querySelectorAll('.compare-detail__grid .compare-detail-card:nth-child(2) .compare-detail-field strong');
+  const values=[`${number(row.sun.elevation,3)}° / ${number(row.sun.azimuth,3)}°`,`${number(row.earth.elevation,3)}° / ${number(row.earth.azimuth,3)}°`,`${row.sun.centerVisible?'Center visible':'Center below'} / ${row.sun.limbVisible?'Limb visible':'Disk hidden'}`,`${row.earth.centerVisible?'Center visible':'Center below'} / ${row.earth.limbVisible?'Limb visible':'Disk hidden'}`,`${number(row.earth.distance,2)} km`,`${number(row.earth.distance/C_KM_S,3)} s`,`${number(row.irradiance,2)} W/m²`,`${number(row.output,2)} W/m²`,`${number(row.roundTrip,3)} s`,`${number(row.sun.horizon,2)}° / ${number(row.earth.horizon,2)}°`];
+  fields.forEach((el,i)=>{if(values[i]!==undefined)el.textContent=values[i];});
+}
+function exportComparisonMission(record,format){
+  const base=(record.site.name||'mission').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'mission';
+  if(format==='json'){
+    const payload={application:'LUNARA',mission:{name:record.site.name,site:record.site,start_utc:new Date(record.startMs).toISOString(),duration_hours:record.hours,sample_step_minutes:record.stepSeconds/60,data_mode:record.mode,ephemeris_metadata:record.meta,terrain_horizon_applied:record.terrainApplied},summary:{sun_center_visible_hours:record.summary.sunCenter,sun_disk_visible_hours:record.summary.sunLimb,earth_center_visible_hours:record.summary.earthCenter,earth_disk_visible_hours:record.summary.earthLimb,peak_sun_elevation_deg:record.summary.maxSun.sun.elevation,peak_earth_elevation_deg:record.summary.maxEarth.earth.elevation,peak_estimated_array_output_W_m2:record.summary.maxPower.output},samples:record.data.map(r=>({utc:new Date(r.dateMs).toISOString(),sun_elevation_deg:r.sun.elevation,sun_azimuth_deg:r.sun.azimuth,sun_horizon_deg:r.sun.horizon,earth_elevation_deg:r.earth.elevation,earth_azimuth_deg:r.earth.azimuth,earth_horizon_deg:r.earth.horizon,earth_distance_km:r.earth.distance,incident_irradiance_W_m2:r.irradiance,estimated_array_output_W_m2:r.output,round_trip_geometric_light_time_s:r.roundTrip}))};
+    download(`lunara_${base}_mission.json`,JSON.stringify(payload,null,2),'application/json');return;
+  }
+  const headers=['sample','utc','sun_elevation_deg','sun_azimuth_deg','sun_horizon_deg','earth_elevation_deg','earth_azimuth_deg','earth_horizon_deg','earth_distance_km','incident_irradiance_W_m2','estimated_array_output_W_m2','round_trip_geometric_light_time_s'];
+  const lines=record.data.map((r,i)=>[i+1,new Date(r.dateMs).toISOString(),r.sun.elevation,r.sun.azimuth,r.sun.horizon,r.earth.elevation,r.earth.azimuth,r.earth.horizon,r.earth.distance,r.irradiance,r.output,r.roundTrip]);
+  const csv=[headers,...lines].map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');download(`lunara_${base}_telemetry.csv`,csv,'text/csv');
+}
+
 function candidateGrid(){
   const reqSun=Number($('minSun').value),reqEarth=Number($('minEarth').value),north=Number($('maxLat').value),step=Number($('gridStep').value);
   if(!Number.isFinite(reqSun)||!Number.isFinite(reqEarth)||!Number.isFinite(north)||north< -89||north> -70||reqSun<0||reqEarth<0)throw new Error('Invalid search parameters. The northern latitude limit must be between −89° and −70°.');
@@ -1595,7 +2310,7 @@ function calculate(){
     if(dataMode==='demo')showNotice('DEMO MODE: synthetic values are provided to test controls, animation and visualizations. They are not SPICE predictions and must not be used to select a real landing site.','warn');else showNotice(`SPICE ephemerides interpolated within dataset coverage. Original average step: ${number(ephemeris.step/60,1)} min; visual interpolation does not increase the underlying physical data resolution.`,'good');
   }catch(err){showNotice(err.message,'warn');$('skyStatus').textContent='No data available for this time window';console.error(err);}
 }
-$('calculate').addEventListener('click',calculate);$('timeSlider').addEventListener('input',e=>{currentIndex=Number(e.target.value);if(rows.length)renderAll();});$('play').addEventListener('click',()=>{if(playTimer){clearInterval(playTimer);playTimer=null;$('play').textContent='▶ Play';return;}if(!rows.length)return;$('play').textContent='Ⅱ Pause';playTimer=setInterval(()=>{currentIndex=(currentIndex+1)%rows.length;$('timeSlider').value=String(currentIndex);renderAll();},120);});$('addCompare').addEventListener('click',addCurrentComparison);$('clearCompare').addEventListener('click',()=>{comparison=[];renderComparison();});$('searchCandidates').addEventListener('click',()=>{try{$('searchResults').innerHTML='<div class="compare-empty" style="grid-column:1/-1">Scanning the polar grid…</div>';const list=candidateGrid();renderCandidates(list);}catch(e){$('searchResults').innerHTML=`<div class="compare-empty" style="grid-column:1/-1">${escapeHtml(e.message)}</div>`;}});
+$('calculate').addEventListener('click',calculate);$('timeSlider').addEventListener('input',e=>{currentIndex=Number(e.target.value);if(rows.length)renderAll();});$('play').addEventListener('click',()=>{if(playTimer){clearInterval(playTimer);playTimer=null;$('play').textContent='▶ Play';return;}if(!rows.length)return;$('play').textContent='Ⅱ Pause';playTimer=setInterval(()=>{currentIndex=(currentIndex+1)%rows.length;$('timeSlider').value=String(currentIndex);renderAll();},120);});$('addCompare').addEventListener('click',addCurrentComparison);$('compareAddCurrent')?.addEventListener('click',()=>$('addCompare').click());$('clearCompare').addEventListener('click',()=>{comparison=[];comparisonIndices.clear();disposeComparisonScenes();$('compare').classList.remove('is-detail-open');$('compareMissionDetail').hidden=true;$('compareMissionDetail').innerHTML='';renderComparison();});$('searchCandidates').addEventListener('click',()=>{try{$('searchResults').innerHTML='<div class="compare-empty" style="grid-column:1/-1">Scanning the polar grid…</div>';const list=candidateGrid();renderCandidates(list);}catch(e){$('searchResults').innerHTML=`<div class="compare-empty" style="grid-column:1/-1">${escapeHtml(e.message)}</div>`;}});
 $('preset').addEventListener('change',e=>{const p=PRESETS[e.target.value];if(!p)return;$('lat').value=p.lat;$('lon').value=p.lon;$('alt').value=p.alt;$('siteName').value=p.name;calculate();});
 $('date').value='2026-11-10T12:00';
 
@@ -1711,6 +2426,10 @@ async function connectLocalSpice(){
 }
 
 $('spiceConnect')?.addEventListener('click', connectLocalSpice);
+// The comparison workbench is moved into a hidden overlay by the layout controller.
+// Delay WebGL initialisation until that workspace is visible so each preview gets real dimensions.
+document.querySelector('[data-open-view=\"comparison\"]')?.addEventListener('click',()=>requestAnimationFrame(()=>requestAnimationFrame(ensureComparisonScenes)));
+window.addEventListener('resize',()=>{if(comparisonViewVisible())requestAnimationFrame(ensureComparisonScenes);});
 refreshLocalSpiceStatus();
 
 // Startup: graceful visual fallback if WebGL is unavailable.
